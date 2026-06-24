@@ -9,7 +9,7 @@ import {
   verifyOtp,
 } from '../controllers/authController.js'
 import { protect } from '../middleware/auth.js'
-import { authLimiter } from '../server.js'
+import { authLimiter } from '../middleware/rateLimiter.js'
 
 const router = express.Router()
 

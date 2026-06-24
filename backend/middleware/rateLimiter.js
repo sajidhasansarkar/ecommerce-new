@@ -1,0 +1,17 @@
+import rateLimit from 'express-rate-limit'
+
+export const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'অনেকবার চেষ্টা করা হয়েছে, ১৫ মিনিট পর আবার চেষ্টা করুন' },
+})
+
+export const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'অনেক বেশি রিকোয়েস্ট হয়েছে, কিছুক্ষণ পর আবার চেষ্টা করুন' },
+})
