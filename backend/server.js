@@ -18,11 +18,24 @@ app.use(helmet())
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  'https://ecommerce-new-wheat.vercel.app',
+  'https://ecommerce-f42iomwmk-sajidhasan-webs-projects.vercel.app',
+  'https://ecommerce-new-git-main-sajidhasan-webs-projects.vercel.app/',
 ].filter(Boolean)
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true)
+    // Allow no origin (mobile apps, Postman)
+    if (!origin) return callback(null, true)
+    
+    // Allow exact matches
+    if (allowedOrigins.includes(origin)) return callback(null, true)
+    
+    // Allow ALL Vercel preview deployments for your project
+    if (origin.match(/https:\/\/ecommerce-new.*\.vercel\.app$/)) {
+      return callback(null, true)
+    }
+    
     callback(new Error(`CORS blocked: ${origin}`))
   },
   credentials: true,
