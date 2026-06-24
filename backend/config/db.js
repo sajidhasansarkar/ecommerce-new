@@ -10,6 +10,6 @@ export async function connectDB() {
     console.log(`MongoDB সংযুক্ত হয়েছে: ${conn.connection.host}`)
   } catch (err) {
     console.error('MongoDB কানেকশন এরর:', err.message)
-    process.exit(1)
+    // process.exit(1)
   }
 }
