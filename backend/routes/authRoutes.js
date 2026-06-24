@@ -1,0 +1,27 @@
+import express from 'express'
+import {
+  registerUser,
+  loginUser,
+  getMe,
+  updateProfile,
+  googleAuth,
+  sendOtp,
+  verifyOtp,
+} from '../controllers/authController.js'
+import { protect } from '../middleware/auth.js'
+import { authLimiter } from '../server.js'
+
+const router = express.Router()
+
+// Rate-limited auth endpoints (brute-force protection)
+router.post('/register', authLimiter, registerUser)
+router.post('/login', authLimiter, loginUser)
+router.post('/google', authLimiter, googleAuth)
+router.post('/send-otp', authLimiter, sendOtp)
+router.post('/verify-otp', authLimiter, verifyOtp)
+
+// Protected profile routes
+router.get('/me', protect, getMe)
+router.put('/profile', protect, updateProfile)
+
+export default router
