@@ -9,6 +9,9 @@ export async function getProducts(req, res) {
     if (category && category !== 'all') {
       filter.categoryKey = category
     }
+    if (req.query.badge) {
+      filter['badge.en'] = { $regex: req.query.badge, $options: 'i' }
+    }
     if (q) {
       filter.$or = [
         { 'name.bn': { $regex: q, $options: 'i' } },

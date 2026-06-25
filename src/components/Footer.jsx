@@ -35,10 +35,35 @@ export default function Footer() {
 
       {/* Footer */}
       <footer className="footer-wrapper">
-        {/* Decorative top wave */}
+        {/* Animated top wave */}
         <div className="footer-wave">
-          <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0,30 C240,60 480,0 720,30 C960,60 1200,0 1440,30 L1440,60 L0,60 Z" fill="#1A1815"/>
+          <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            {/* back wave — slower, lighter */}
+            <path fill="#2a2520" opacity="0.5">
+              <animate
+                attributeName="d"
+                dur="9s"
+                repeatCount="indefinite"
+                values="
+                  M0,40 C200,70 400,10 600,40 C800,70 1000,10 1200,40 C1300,55 1380,35 1440,40 L1440,80 L0,80 Z;
+                  M0,35 C180,10 380,65 580,35 C780,10 980,65 1180,35 C1310,20 1390,55 1440,35 L1440,80 L0,80 Z;
+                  M0,40 C200,70 400,10 600,40 C800,70 1000,10 1200,40 C1300,55 1380,35 1440,40 L1440,80 L0,80 Z
+                "
+              />
+            </path>
+            {/* front wave — main dark fill */}
+            <path fill="#1A1815">
+              <animate
+                attributeName="d"
+                dur="6s"
+                repeatCount="indefinite"
+                values="
+                  M0,45 C240,75 480,15 720,45 C960,75 1200,15 1440,45 L1440,80 L0,80 Z;
+                  M0,38 C220,15 460,68 700,38 C940,15 1180,68 1440,38 L1440,80 L0,80 Z;
+                  M0,45 C240,75 480,15 720,45 C960,75 1200,15 1440,45 L1440,80 L0,80 Z
+                "
+              />
+            </path>
           </svg>
         </div>
 
@@ -231,11 +256,11 @@ export default function Footer() {
         .footer-wave {
           line-height: 0;
           overflow: hidden;
-          height: 40px;
+          height: 80px;
         }
         .footer-wave svg {
           width: 100%;
-          height: 60px;
+          height: 80px;
           display: block;
         }
         .footer-body {

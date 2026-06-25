@@ -12,6 +12,7 @@ import Cart from './pages/Cart.jsx'
 import Checkout from './pages/Checkout.jsx'
 import Login from './pages/Login.jsx'
 import Profile from './pages/Profile.jsx'
+import About from './pages/About.jsx'
 
 import AdminLayout from './admin/AdminLayout.jsx'
 import Dashboard from './admin/Dashboard.jsx'
@@ -47,6 +48,7 @@ export default function App() {
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/about" element={<About />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

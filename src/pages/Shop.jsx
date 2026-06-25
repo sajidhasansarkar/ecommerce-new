@@ -9,6 +9,7 @@ import { api } from '../api.js'
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams()
   const activeCategory = searchParams.get('category') || 'all'
+  const activeBadge = searchParams.get('badge') || ''
   const searchQuery = searchParams.get('q') || ''
   const { lang, t } = useLanguage()
   const { categories } = useCategories()
@@ -31,12 +32,13 @@ export default function Shop() {
     setLoading(true)
     const params = {}
     if (activeCategory !== 'all') params.category = activeCategory
+    if (activeBadge) params.badge = activeBadge
     if (searchQuery) params.q = searchQuery
     api.products.list(params)
       .then(setProducts)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [activeCategory, searchQuery])
+  }, [activeCategory, activeBadge, searchQuery])
 
   function setCategory(catKey) {
     const params = new URLSearchParams(searchParams)
@@ -54,14 +56,19 @@ export default function Shop() {
     return list
   }, [products, sort, maxPrice])
 
-  // Dynamic title: look up current category name
+  // Dynamic title
   const activeCatObj = categories.find((c) => c.key === activeCategory)
+  const badgeTitleMap = {
+    new: lang === 'bn' ? 'নতুন আগমন' : 'New Arrivals',
+    bestseller: lang === 'bn' ? 'বেস্ট সেলার' : 'Best Sellers',
+    sale: lang === 'bn' ? 'অফার ও সেল' : 'Deals & Offers',
+    trending: lang === 'bn' ? 'ট্রেন্ডিং' : 'Trending',
+  }
   const categoryTitle =
-    activeCategory === 'all'
-      ? t('shop.allProducts')
-      : activeCatObj
-        ? (lang === 'bn' ? activeCatObj.name.bn : activeCatObj.name.en)
-        : activeCategory
+    activeBadge ? (badgeTitleMap[activeBadge] || activeBadge)
+    : activeCategory === 'all' ? t('shop.allProducts')
+    : activeCatObj ? (lang === 'bn' ? activeCatObj.name.bn : activeCatObj.name.en)
+    : activeCategory
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
