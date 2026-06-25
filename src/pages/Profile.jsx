@@ -1,11 +1,13 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useLanguage } from '../context/LanguageContext.jsx'
 import { api } from '../api.js'
 import { User, Phone, Mail, MapPin, Lock, Check, ArrowLeft } from 'lucide-react'
 
 export default function Profile() {
   const { user, updateUser, logout } = useAuth()
+  const { t } = useLanguage()
   const navigate = useNavigate()
 
   const [form, setForm] = useState({
@@ -37,11 +39,11 @@ export default function Profile() {
     setSuccess(false)
 
     if (form.password && form.password !== form.confirmPassword) {
-      setError('পাসওয়ার্ড মিলছে না')
+      setError(t('profile.errPasswordMismatch'))
       return
     }
     if (!form.name.trim()) {
-      setError('নাম দিন')
+      setError(t('profile.errName'))
       return
     }
 
@@ -72,7 +74,7 @@ export default function Profile() {
         onClick={() => navigate(-1)}
         className="flex items-center gap-2 text-sm text-ink/50 hover:text-clay mb-6 transition-colors"
       >
-        <ArrowLeft size={15} /> ফিরে যান
+        <ArrowLeft size={15} /> {t('profile.back')}
       </button>
 
       {/* Header */}
@@ -88,18 +90,18 @@ export default function Profile() {
           <h1 className="font-display text-2xl text-ink">{user.name}</h1>
           <p className="text-sm text-ink/50">{user.email || user.phone}</p>
           {user.role === 'admin' && (
-            <span className="inline-block mt-1 text-xs font-semibold bg-clay/15 text-clay px-2 py-0.5 rounded-full">অ্যাডমিন</span>
+            <span className="inline-block mt-1 text-xs font-semibold bg-clay/15 text-clay px-2 py-0.5 rounded-full">{t('profile.admin')}</span>
           )}
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <h2 className="text-sm font-semibold text-ink/60 uppercase tracking-wider border-b border-stone-dark pb-2">ব্যক্তিগত তথ্য</h2>
+        <h2 className="text-sm font-semibold text-ink/60 uppercase tracking-wider border-b border-stone-dark pb-2">{t('profile.personalInfo')}</h2>
 
         {/* Name */}
         <div>
           <label className="block text-sm font-medium text-ink mb-1.5 flex items-center gap-1.5">
-            <User size={13} /> পুরো নাম
+            <User size={13} /> {t('profile.fullName')}
           </label>
           <input
             name="name" value={form.name} onChange={handleChange}
@@ -110,11 +112,11 @@ export default function Profile() {
         {/* Email */}
         <div>
           <label className="block text-sm font-medium text-ink mb-1.5 flex items-center gap-1.5">
-            <Mail size={13} /> ইমেইল
+            <Mail size={13} /> {t('profile.email')}
           </label>
           <input
             name="email" type="email" value={form.email} onChange={handleChange}
-            placeholder="আপনার ইমেইল"
+            placeholder={t('profile.emailPlaceholder')}
             className="w-full bg-sand border border-stone-dark rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40"
           />
         </div>
@@ -122,7 +124,7 @@ export default function Profile() {
         {/* Phone */}
         <div>
           <label className="block text-sm font-medium text-ink mb-1.5 flex items-center gap-1.5">
-            <Phone size={13} /> ফোন নম্বর
+            <Phone size={13} /> {t('profile.phone')}
           </label>
           <input
             name="phone" type="tel" value={form.phone} onChange={handleChange}
@@ -134,21 +136,21 @@ export default function Profile() {
         {/* Address */}
         <div>
           <label className="block text-sm font-medium text-ink mb-1.5 flex items-center gap-1.5">
-            <MapPin size={13} /> ঠিকানা
+            <MapPin size={13} /> {t('profile.address')}
           </label>
           <textarea
             name="address" value={form.address} onChange={handleChange}
-            rows={2} placeholder="আপনার ঠিকানা"
+            rows={2} placeholder={t('profile.addressPlaceholder')}
             className="w-full bg-sand border border-stone-dark rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40 resize-none"
           />
         </div>
 
-        <h2 className="text-sm font-semibold text-ink/60 uppercase tracking-wider border-b border-stone-dark pb-2 pt-2">পাসওয়ার্ড পরিবর্তন</h2>
+        <h2 className="text-sm font-semibold text-ink/60 uppercase tracking-wider border-b border-stone-dark pb-2 pt-2">{t('profile.changePassword')}</h2>
 
         {/* Password */}
         <div>
           <label className="block text-sm font-medium text-ink mb-1.5 flex items-center gap-1.5">
-            <Lock size={13} /> নতুন পাসওয়ার্ড <span className="text-ink/40 font-normal">(ঐচ্ছিক)</span>
+            <Lock size={13} /> {t('profile.newPassword')} <span className="text-ink/40 font-normal">{t('profile.optional')}</span>
           </label>
           <input
             name="password" type="password" value={form.password} onChange={handleChange}
@@ -159,7 +161,7 @@ export default function Profile() {
 
         {form.password && (
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">পাসওয়ার্ড নিশ্চিত করুন</label>
+            <label className="block text-sm font-medium text-ink mb-1.5">{t('profile.confirmPassword')}</label>
             <input
               name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange}
               placeholder="••••••••"
@@ -172,7 +174,7 @@ export default function Profile() {
 
         {success && (
           <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
-            <Check size={15} /> তথ্য সফলভাবে সংরক্ষিত হয়েছে
+            <Check size={15} /> {t('profile.saveSuccess')}
           </div>
         )}
 
@@ -180,7 +182,7 @@ export default function Profile() {
           type="submit" disabled={loading}
           className="w-full bg-ink text-sand py-3 rounded-lg font-medium hover:bg-clay transition-colors disabled:opacity-60"
         >
-          {loading ? 'সংরক্ষণ হচ্ছে...' : 'পরিবর্তন সংরক্ষণ করুন'}
+          {loading ? t('profile.saving') : t('profile.saveChanges')}
         </button>
       </form>
     </div>

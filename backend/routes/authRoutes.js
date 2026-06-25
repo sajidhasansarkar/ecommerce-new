@@ -5,6 +5,7 @@ import {
   getMe,
   updateProfile,
   googleAuth,
+  facebookAuth,
   sendOtp,
   verifyOtp,
 } from '../controllers/authController.js'
@@ -17,6 +18,7 @@ const router = express.Router()
 router.post('/register', authLimiter, registerUser)
 router.post('/login', authLimiter, loginUser)
 router.post('/google', authLimiter, googleAuth)
+router.post('/facebook', authLimiter, facebookAuth)
 router.post('/send-otp', authLimiter, sendOtp)
 router.post('/verify-otp', authLimiter, verifyOtp)
 

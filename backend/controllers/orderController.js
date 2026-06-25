@@ -1,9 +1,5 @@
 import Order from '../models/Order.js'
 
-// ━━━ Unique Order Number Generator ━━━
-// Format: ORD-2026-A7X9K2
-// বছর + ৬ টি random alphanumeric (A-Z, 2-9) — confusing characters (0,1,O,I) বাদ দেওয়া হয়েছে
-// মোট combination: 32^6 = ১ বিলিয়নেরও বেশি — collision practically impossible
 const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 function generateOrderNumber() {
@@ -15,7 +11,6 @@ function generateOrderNumber() {
   return `ORD-${year}-${suffix}`
 }
 
-// collision হলে নতুন কোড তৈরি করে retry করা হয় (max 5 বার)
 async function uniqueOrderNumber(attempt = 0) {
   if (attempt >= 5) throw new Error('অর্ডার নম্বর তৈরি করতে সমস্যা হয়েছে, আবার চেষ্টা করুন')
   const num = generateOrderNumber()
@@ -23,32 +18,18 @@ async function uniqueOrderNumber(attempt = 0) {
   return exists ? uniqueOrderNumber(attempt + 1) : num
 }
 
-// POST /api/orders  (চেকআউট পেজ থেকে কল হবে)
 export async function createOrder(req, res) {
   try {
-    const { items, fullName, phone, address, city, paymentMethod, subtotal, shipping, total } =
-      req.body
-
+    const { items, fullName, phone, address, city, paymentMethod, subtotal, shipping, total } = req.body
     if (!items || items.length === 0) {
       return res.status(400).json({ message: 'কার্ট খালি, অর্ডার করা যাবে না' })
     }
-
     const orderNumber = await uniqueOrderNumber()
-
     const order = new Order({
       orderNumber,
       user: req.user?._id || null,
-      items,
-      fullName,
-      phone,
-      address,
-      city,
-      paymentMethod,
-      subtotal,
-      shipping,
-      total,
+      items, fullName, phone, address, city, paymentMethod, subtotal, shipping, total,
     })
-
     const saved = await order.save()
     res.status(201).json(saved)
   } catch (err) {
@@ -56,7 +37,6 @@ export async function createOrder(req, res) {
   }
 }
 
-// GET /api/orders   (অ্যাডমিন প্যানেলের জন্য, ?status=processing দিয়ে ফিল্টার করা যায়)
 export async function getOrders(req, res) {
   try {
     const { status } = req.query
@@ -68,7 +48,6 @@ export async function getOrders(req, res) {
   }
 }
 
-// GET /api/orders/:id
 export async function getOrderById(req, res) {
   try {
     const order = await Order.findById(req.params.id)
@@ -79,7 +58,6 @@ export async function getOrderById(req, res) {
   }
 }
 
-// PUT /api/orders/:id/status   (অ্যাডমিন থেকে স্ট্যাটাস বদলানোর জন্য)
 export async function updateOrderStatus(req, res) {
   try {
     const { status } = req.body
@@ -91,7 +69,41 @@ export async function updateOrderStatus(req, res) {
   }
 }
 
-// GET /api/orders/customers   (অ্যাডমিন কাস্টমার পেজের জন্য)
+// PUT /api/orders/:id — full order edit
+export async function updateOrder(req, res) {
+  try {
+    const allowed = ['fullName','phone','address','city','paymentMethod','status','items','subtotal','shipping','total']
+    const update = {}
+    allowed.forEach(k => { if (req.body[k] !== undefined) update[k] = req.body[k] })
+    const order = await Order.findByIdAndUpdate(req.params.id, update, { new: true })
+    if (!order) return res.status(404).json({ message: 'অর্ডার পাওয়া যায়নি' })
+    res.json(order)
+  } catch (err) {
+    res.status(400).json({ message: err.message })
+  }
+}
+
+// DELETE /api/orders/:id
+export async function deleteOrder(req, res) {
+  try {
+    const order = await Order.findByIdAndDelete(req.params.id)
+    if (!order) return res.status(404).json({ message: 'অর্ডার পাওয়া যায়নি' })
+    res.json({ message: 'অর্ডার ডিলিট হয়েছে' })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}
+
+// DELETE /api/orders/bulk/cancelled — সব cancelled অর্ডার মুছুন
+export async function deleteCancelledOrders(req, res) {
+  try {
+    const result = await Order.deleteMany({ status: 'cancelled' })
+    res.json({ message: `${result.deletedCount}টি বাতিল অর্ডার মুছে ফেলা হয়েছে`, deletedCount: result.deletedCount })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}
+
 export async function getCustomers(req, res) {
   try {
     const customers = await Order.aggregate([

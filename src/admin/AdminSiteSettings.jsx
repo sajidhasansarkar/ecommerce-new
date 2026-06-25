@@ -1,0 +1,489 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+import {
+  Loader2, Save, Image, Upload, Link as LinkIcon, RefreshCw,
+  Plus, Trash2, GripVertical, Eye, EyeOff, ChevronDown,
+  ImageIcon, Megaphone, LayoutGrid, Tag, CheckCircle2
+} from 'lucide-react'
+import { api } from '../api.js'
+import { useLanguage } from '../context/LanguageContext.jsx'
+
+const DEFAULT_CAT_IMAGES = {
+  shoes: 'https://images.unsplash.com/photo-1551489186-cf8726f514f8?w=700&q=80',
+  bags:  'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=700&q=80',
+}
+const DEFAULT_MARQUEE = ['নতুন কালেকশন এসেছে', 'বিশেষ ছাড় চলছে', 'ফ্রি শিপিং ৳৫০০+ অর্ডারে', 'লিমিটেড এডিশন']
+
+function fileToDataUrl(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader()
+    r.onload = () => res(r.result)
+    r.onerror = rej
+    r.readAsDataURL(file)
+  })
+}
+
+/* ——— Accordion Section ——— */
+function AccordionSection({ icon: Icon, title, desc, badge, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className={`rounded-xl border transition-all duration-200 overflow-hidden ${open ? 'border-clay/40 shadow-sm' : 'border-stone-dark'}`}>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className={`w-full flex items-center gap-3 px-5 py-4 text-left transition-colors ${open ? 'bg-clay/5' : 'bg-sand hover:bg-stone/40'}`}
+      >
+        <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${open ? 'bg-clay text-sand' : 'bg-stone text-ink/50'}`}>
+          <Icon size={16} />
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm text-ink">{title}</span>
+            {badge != null && (
+              <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${badge > 0 ? 'bg-clay/15 text-clay' : 'bg-stone text-ink/40'}`}>
+                {badge}
+              </span>
+            )}
+          </div>
+          {desc && <p className="text-xs text-ink/40 mt-0.5 truncate">{desc}</p>}
+        </div>
+        <ChevronDown
+          size={16}
+          className={`text-ink/40 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {open && (
+        <div className="px-5 pb-6 pt-4 border-t border-stone-dark bg-sand">
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ——— ImagePicker ——— */
+function ImagePicker({ label, value, onChange, aspect = 'aspect-video' }) {
+  const { t } = useLanguage()
+  const [tab, setTab] = useState('url')
+  const [urlInput, setUrlInput] = useState(value || '')
+  const [dragOver, setDragOver] = useState(false)
+  const fileRef = useRef(null)
+
+  useEffect(() => { setUrlInput(value || '') }, [value])
+
+  async function processFile(file) {
+    if (!file.type.startsWith('image/')) return
+    onChange(await fileToDataUrl(file))
+  }
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault(); setDragOver(false)
+    const f = e.dataTransfer.files[0]; if (f) processFile(f)
+  }, [])
+
+  return (
+    <div className="space-y-3">
+      {label && <p className="text-sm font-medium text-ink">{label}</p>}
+      <div className="flex border border-stone-dark rounded-lg overflow-hidden w-fit bg-stone/30">
+        {[
+          { key: 'url',    icon: LinkIcon, text: t('admin.linkTab') },
+          { key: 'upload', icon: Upload,   text: t('admin.uploadTab') },
+          { key: 'drag',   icon: Image,    text: t('admin.dragTab') },
+        ].map(({ key, icon: Icon, text }) => (
+          <button key={key} type="button" onClick={() => setTab(key)}
+            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${tab === key ? 'bg-ink text-sand' : 'text-ink/60 hover:bg-stone/60'}`}>
+            <Icon size={12} /> {text}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'url' && (
+        <div className="flex gap-2">
+          <input value={urlInput} onChange={e => setUrlInput(e.target.value)}
+            placeholder="https://example.com/image.jpg"
+            className="flex-1 bg-stone/40 border border-stone-dark rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
+          <button type="button" onClick={() => onChange(urlInput.trim())}
+            className="bg-ink text-sand px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-clay transition-colors shrink-0">
+            {t('admin.setBtn')}
+          </button>
+        </div>
+      )}
+      {tab === 'upload' && (
+        <>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden"
+            onChange={async e => { if (e.target.files[0]) await processFile(e.target.files[0]); e.target.value = '' }} />
+          <button type="button" onClick={() => fileRef.current?.click()}
+            className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-stone-dark rounded-lg py-5 text-sm text-ink/60 hover:border-clay hover:text-clay transition-colors">
+            <Upload size={18} /> {t('admin.chooseImage')}
+          </button>
+        </>
+      )}
+      {tab === 'drag' && (
+        <div onDrop={handleDrop} onDragOver={e => { e.preventDefault(); setDragOver(true) }} onDragLeave={() => setDragOver(false)}
+          className={`w-full border-2 border-dashed rounded-lg py-10 flex flex-col items-center justify-center gap-2 transition-colors ${dragOver ? 'border-clay bg-clay/5 text-clay' : 'border-stone-dark text-ink/50'}`}>
+          <ImageIcon size={30} className={dragOver ? 'text-clay' : 'text-ink/20'} />
+          <p className="text-sm font-medium">{dragOver ? t('admin.dropHere') : t('admin.dragHere')}</p>
+        </div>
+      )}
+
+      {value ? (
+        <div className={`relative w-full ${aspect} rounded-xl overflow-hidden border border-stone-dark bg-stone/30`}>
+          <img src={value} alt={label} className="w-full h-full object-cover" onError={e => { e.target.style.opacity = '0.3' }} />
+          <button type="button" onClick={() => onChange('')}
+            className="absolute top-2 right-2 bg-ink/70 text-sand rounded-full p-1.5 hover:bg-clay transition-colors">
+            <RefreshCw size={13} />
+          </button>
+        </div>
+      ) : (
+        <div className={`w-full ${aspect} rounded-xl border-2 border-dashed border-stone-dark bg-stone/20 flex flex-col items-center justify-center gap-2`}>
+          <ImageIcon size={24} className="text-ink/20" />
+          <p className="text-ink/30 text-sm">{t('admin.noImageSet')}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ——— Live Preview ——— */
+function LivePreview({ heroSlider, shoesImage, bagsImage, promoBanner, marqueeItems }) {
+  const { t } = useLanguage()
+  const [slide, setSlide] = useState(0)
+  useEffect(() => {
+    if (heroSlider.length < 2) return
+    const timer = setInterval(() => setSlide(i => (i + 1) % heroSlider.length), 2000)
+    return () => clearInterval(timer)
+  }, [heroSlider.length])
+
+  return (
+    <div className="rounded-xl border border-stone-dark overflow-hidden bg-stone/20 text-[10px] shadow-sm">
+      {/* browser bar */}
+      <div className="bg-stone px-3 py-2 flex items-center gap-2 border-b border-stone-dark">
+        <div className="flex gap-1">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-400/70" />
+          <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/70" />
+          <span className="w-2.5 h-2.5 rounded-full bg-green-400/70" />
+        </div>
+        <div className="flex-1 bg-stone-dark rounded-md px-2 py-0.5 text-ink/40 font-mono text-[9px] ml-1">
+          {t('admin.homepagePreview')}
+        </div>
+      </div>
+
+      {/* fake navbar */}
+      <div className="bg-sand px-3 py-1.5 flex items-center justify-between border-b border-stone-dark/50">
+        <div className="w-10 h-1.5 bg-ink/70 rounded" />
+        <div className="flex gap-2">
+          <div className="w-6 h-1 bg-ink/20 rounded" />
+          <div className="w-6 h-1 bg-ink/20 rounded" />
+          <div className="w-6 h-1 bg-ink/20 rounded" />
+        </div>
+      </div>
+
+      {/* hero */}
+      <div className="bg-stone p-3 grid grid-cols-2 gap-3 items-center">
+        <div>
+          <div className="w-8 h-1 bg-clay/50 rounded mb-1.5" />
+          <div className="w-16 h-2 bg-ink/60 rounded mb-1" />
+          <div className="w-12 h-2 bg-clay/80 rounded mb-2" />
+          <div className="w-14 h-4 bg-ink rounded" />
+        </div>
+        <div className="relative aspect-square rounded-lg overflow-hidden bg-stone-dark">
+          {heroSlider.length > 0
+            ? <img src={heroSlider[slide]} className="w-full h-full object-cover transition-opacity duration-700" alt="" />
+            : <div className="w-full h-full flex items-center justify-center"><ImageIcon size={16} className="text-ink/20" /></div>
+          }
+          {heroSlider.length > 1 && (
+            <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-0.5">
+              {heroSlider.map((_, i) => <span key={i} className={`w-1 h-1 rounded-full transition-all ${i === slide ? 'bg-sand w-2.5' : 'bg-sand/40'}`} />)}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* marquee */}
+      {marqueeItems.length > 0 && (
+        <div className="bg-clay py-1 px-3 overflow-hidden">
+          <p className="text-sand/90 font-mono whitespace-nowrap truncate tracking-widest" style={{fontSize:8}}>
+            {marqueeItems.join('  ·  ')}
+          </p>
+        </div>
+      )}
+
+      {/* categories */}
+      <div className="p-3 grid grid-cols-2 gap-2">
+        {[{ img: shoesImage, label: 'জুতা' }, { img: bagsImage, label: 'ব্যাগ' }].map(({ img, label }, i) => (
+          <div key={i} className="relative aspect-video rounded-md overflow-hidden bg-stone-dark">
+            {img
+              ? <img src={img} className="w-full h-full object-cover" alt="" />
+              : <div className="w-full h-full flex items-center justify-center"><ImageIcon size={12} className="text-ink/20" /></div>
+            }
+            <div className="absolute inset-0 bg-gradient-to-t from-ink/50 to-transparent" />
+            <span className="absolute bottom-1 left-1.5 text-sand font-bold" style={{fontSize:8}}>{label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* promo */}
+      {promoBanner.image && (
+        <div className="px-3 pb-3">
+          <div className="relative aspect-[21/8] rounded-md overflow-hidden bg-stone-dark">
+            <img src={promoBanner.image} className="w-full h-full object-cover" alt="" />
+            <div className="absolute inset-0 bg-gradient-to-r from-ink/60 to-transparent" />
+            {promoBanner.title && (
+              <span className="absolute bottom-1 left-2 text-sand font-bold" style={{fontSize:8}}>{promoBanner.title}</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* footer hint */}
+      <div className="bg-ink/80 px-3 py-2">
+        <div className="flex justify-between">
+          <div className="w-10 h-1 bg-sand/30 rounded" />
+          <div className="flex gap-2">
+            <div className="w-6 h-1 bg-sand/20 rounded" />
+            <div className="w-6 h-1 bg-sand/20 rounded" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ——— Main ——— */
+export default function AdminSiteSettings() {
+  const { t } = useLanguage()
+  const [loading, setLoading]   = useState(true)
+  const [saving, setSaving]     = useState(false)
+  const [success, setSuccess]   = useState(false)
+  const [error, setError]       = useState('')
+  const [showPreview, setShowPreview] = useState(true)
+
+  const [heroImage,    setHeroImage]    = useState('')
+  const [shoesImage,   setShoesImage]   = useState(DEFAULT_CAT_IMAGES.shoes)
+  const [bagsImage,    setBagsImage]    = useState(DEFAULT_CAT_IMAGES.bags)
+  const [heroSlider,   setHeroSlider]   = useState([])
+  const [promoBanner,  setPromoBanner]  = useState({ image: '', title: '', subtitle: '', link: '/shop' })
+  const [marqueeItems, setMarqueeItems] = useState(DEFAULT_MARQUEE)
+  const [newMarquee,   setNewMarquee]   = useState('')
+
+  useEffect(() => {
+    api.settings.get()
+      .then(s => {
+        setHeroImage(s.heroImage || '')
+        setShoesImage(s.categoryImages?.shoes || DEFAULT_CAT_IMAGES.shoes)
+        setBagsImage(s.categoryImages?.bags   || DEFAULT_CAT_IMAGES.bags)
+        setHeroSlider(s.heroSlider || [])
+        setPromoBanner(s.promoBanner || { image: '', title: '', subtitle: '', link: '/shop' })
+        setMarqueeItems(s.marqueeItems || DEFAULT_MARQUEE)
+      })
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const sliderForPreview = heroSlider.length > 0 ? heroSlider : (heroImage ? [heroImage] : [])
+
+  async function handleSave() {
+    setSaving(true); setError(''); setSuccess(false)
+    try {
+      await api.settings.update({
+        heroImage,
+        categoryImages: { shoes: shoesImage, bags: bagsImage },
+        heroSlider,
+        promoBanner,
+        marqueeItems,
+      })
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 4000)
+    } catch (e) { setError(e.message) }
+    finally { setSaving(false) }
+  }
+
+  if (loading) return (
+    <div className="max-w-5xl space-y-4 animate-pulse">
+      <div className="h-8 w-48 bg-stone rounded-lg" />
+      <div className="h-4 w-72 bg-stone rounded" />
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="h-16 bg-stone rounded-xl border border-stone-dark" />
+      ))}
+    </div>
+  )
+
+  return (
+    <div className="max-w-5xl">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="font-display text-2xl lg:text-3xl text-ink">{t('admin.siteSettings')}</h1>
+          <p className="text-ink/50 text-sm mt-1">{t('admin.siteSettingsDesc')}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setShowPreview(v => !v)}
+            className="flex items-center gap-2 text-sm border border-stone-dark rounded-lg px-3 py-2 hover:border-clay hover:text-clay transition-colors bg-sand">
+            {showPreview ? <EyeOff size={14} /> : <Eye size={14} />}
+            <span className="hidden sm:inline">{showPreview ? t('admin.hidePreview') : t('admin.showPreview')}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Alerts */}
+      {error && (
+        <div className="flex items-center gap-2 text-clay text-sm mb-5 bg-clay/10 border border-clay/20 px-4 py-3 rounded-lg">
+          <span className="shrink-0">⚠️</span> {error}
+        </div>
+      )}
+      {success && (
+        <div className="flex items-center gap-2 text-green-700 text-sm mb-5 bg-green-50 border border-green-200 px-4 py-3 rounded-lg">
+          <CheckCircle2 size={16} className="shrink-0" /> {t('admin.saveSuccess')}
+        </div>
+      )}
+
+      <div className={`grid gap-6 ${showPreview ? 'lg:grid-cols-[1fr_300px]' : ''}`}>
+        {/* ——— Left: accordion sections ——— */}
+        <div className="space-y-3">
+
+          {/* 1. Hero Slider */}
+          <AccordionSection
+            icon={ImageIcon}
+            title={t('admin.heroSlider')}
+            desc={t('admin.heroSliderDesc')}
+            badge={heroSlider.length}
+            defaultOpen={true}
+          >
+            {/* existing slides */}
+            {heroSlider.length > 0 && (
+              <div className="space-y-2 mb-5">
+                {heroSlider.map((src, i) => (
+                  <div key={i} className="flex items-center gap-3 bg-stone/50 rounded-lg p-2 border border-stone-dark">
+                    <GripVertical size={15} className="text-ink/25 shrink-0" />
+                    <img src={src} alt="" className="w-16 h-11 object-cover rounded-md shrink-0 border border-stone-dark" onError={e => e.target.style.opacity = '0.3'} />
+                    <p className="text-xs text-ink/50 flex-1 truncate font-mono">{src.length > 45 ? src.slice(0, 45) + '…' : src}</p>
+                    <button onClick={() => setHeroSlider(s => s.filter((_, j) => j !== i))}
+                      className="text-ink/30 hover:text-clay transition-colors shrink-0 p-1 hover:bg-clay/10 rounded">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {heroSlider.length === 0 && (
+              <div className="mb-4 py-3 px-4 bg-stone/40 rounded-lg border border-dashed border-stone-dark text-xs text-ink/40">
+                {t('admin.noSlides')}
+              </div>
+            )}
+            <ImagePicker label={t('admin.addSlide')} value="" onChange={url => { if (url) setHeroSlider(s => [...s, url]) }} aspect="aspect-video" />
+
+            <div className="mt-5 pt-5 border-t border-stone-dark">
+              <p className="text-xs text-ink/40 mb-3 flex items-center gap-1.5">
+                <span className="w-3 h-px bg-ink/20 inline-block" />
+                {t('admin.singleHeroDesc')}
+              </p>
+              <ImagePicker label={t('admin.singleHero')} value={heroImage} onChange={setHeroImage} aspect="aspect-video" />
+            </div>
+          </AccordionSection>
+
+          {/* 2. Marquee */}
+          <AccordionSection
+            icon={Megaphone}
+            title={t('admin.marqueeSection')}
+            desc={t('admin.marqueeDesc')}
+            badge={marqueeItems.length}
+          >
+            <div className="space-y-2 mb-4">
+              {marqueeItems.map((item, i) => (
+                <div key={i} className="flex items-center gap-2 bg-stone/50 rounded-lg px-3 py-2.5 border border-stone-dark">
+                  <span className="w-1.5 h-1.5 rounded-full bg-clay shrink-0" />
+                  <p className="text-sm flex-1">{item}</p>
+                  <button onClick={() => setMarqueeItems(m => m.filter((_, j) => j !== i))}
+                    className="text-ink/30 hover:text-clay shrink-0 p-1 hover:bg-clay/10 rounded transition-colors">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input value={newMarquee} onChange={e => setNewMarquee(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && newMarquee.trim()) { setMarqueeItems(m => [...m, newMarquee.trim()]); setNewMarquee('') } }}
+                placeholder={t('admin.marqueePlaceholder')}
+                className="flex-1 bg-stone/40 border border-stone-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
+              <button
+                onClick={() => { if (newMarquee.trim()) { setMarqueeItems(m => [...m, newMarquee.trim()]); setNewMarquee('') } }}
+                className="bg-clay text-sand px-4 py-2 rounded-lg text-sm font-medium hover:bg-clay-dark transition-colors flex items-center gap-1.5 shrink-0">
+                <Plus size={14} /> {t('admin.marqueeAdd')}
+              </button>
+            </div>
+          </AccordionSection>
+
+          {/* 3. Category Images */}
+          <AccordionSection
+            icon={LayoutGrid}
+            title={t('admin.categoryImages')}
+            desc={t('admin.categoryImagesDesc')}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <ImagePicker label={t('admin.shoesCategory')} value={shoesImage} onChange={setShoesImage} />
+              <ImagePicker label={t('admin.bagsCategory')}  value={bagsImage}  onChange={setBagsImage}  />
+            </div>
+          </AccordionSection>
+
+          {/* 4. Promo Banner */}
+          <AccordionSection
+            icon={Tag}
+            title={t('admin.promoBanner')}
+            desc={t('admin.promoBannerDesc')}
+            badge={promoBanner.image ? 1 : 0}
+          >
+            <ImagePicker label={t('admin.bannerImage')} value={promoBanner.image}
+              onChange={v => setPromoBanner(b => ({ ...b, image: v }))} />
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-ink mb-1.5">{t('admin.bannerTitle')}</label>
+                <input value={promoBanner.title}
+                  onChange={e => setPromoBanner(b => ({ ...b, title: e.target.value }))}
+                  placeholder={t('admin.bannerTitlePlaceholder')}
+                  className="w-full bg-stone/40 border border-stone-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-ink mb-1.5">{t('admin.bannerSubtitle')}</label>
+                <input value={promoBanner.subtitle}
+                  onChange={e => setPromoBanner(b => ({ ...b, subtitle: e.target.value }))}
+                  placeholder={t('admin.bannerSubtitlePlaceholder')}
+                  className="w-full bg-stone/40 border border-stone-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-ink mb-1.5">{t('admin.bannerLink')}</label>
+                <input value={promoBanner.link}
+                  onChange={e => setPromoBanner(b => ({ ...b, link: e.target.value }))}
+                  placeholder="/shop"
+                  className="w-full bg-stone/40 border border-stone-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
+              </div>
+            </div>
+          </AccordionSection>
+        </div>
+
+        {/* ——— Right: Live Preview ——— */}
+        {showPreview && (
+          <div className="lg:sticky lg:top-6 lg:self-start">
+            <p className="text-xs font-semibold text-ink/40 uppercase tracking-widest mb-3">{t('admin.livePreview')}</p>
+            <LivePreview
+              heroSlider={sliderForPreview}
+              shoesImage={shoesImage}
+              bagsImage={bagsImage}
+              promoBanner={promoBanner}
+              marqueeItems={marqueeItems}
+            />
+            <p className="text-[10px] text-ink/30 text-center mt-2">↑ রিয়েল-টাইম প্রিভিউ</p>
+          </div>
+        )}
+      </div>
+
+      {/* Save Button */}
+      <div className="mt-8 pt-6 border-t border-stone-dark flex items-center justify-between">
+        <p className="text-xs text-ink/40">সব পরিবর্তন একসাথে সেভ হবে</p>
+        <button onClick={handleSave} disabled={saving}
+          className="flex items-center gap-2 bg-clay text-sand px-6 py-3 rounded-lg font-medium hover:bg-clay-dark disabled:opacity-60 transition-colors shadow-sm">
+          {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+          {saving ? t('admin.savingSettings') : t('admin.saveSettings')}
+        </button>
+      </div>
+    </div>
+  )
+}

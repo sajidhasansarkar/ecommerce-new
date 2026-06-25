@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ['customer', 'admin'], default: 'customer' },
     // Google OAuth
     googleId: { type: String, sparse: true },
+    // Facebook OAuth
+    facebookId: { type: String, sparse: true },
     avatar: { type: String },
     // Phone OTP
     otp: { type: String },

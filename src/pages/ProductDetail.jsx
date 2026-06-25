@@ -93,7 +93,7 @@ export default function ProductDetail() {
               <img src={product.images[activeImage]} alt={name} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-ink/30 font-display text-lg">
-                কোনো ছবি নেই
+                {t('common.noImage')}
               </div>
             )}
           </div>

@@ -18,6 +18,7 @@ import Dashboard from './admin/Dashboard.jsx'
 import AdminProducts from './admin/AdminProducts.jsx'
 import AdminOrders from './admin/AdminOrders.jsx'
 import AdminCustomers from './admin/AdminCustomers.jsx'
+import AdminSiteSettings from './admin/AdminSiteSettings.jsx'
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="products" element={<AdminProducts />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="customers" element={<AdminCustomers />} />
+        <Route path="settings" element={<AdminSiteSettings />} />
       </Route>
 
       <Route

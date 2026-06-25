@@ -1,26 +1,47 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
 import { useLanguage } from '../context/LanguageContext.jsx'
-import { CheckCircle2 } from 'lucide-react'
+import { useAuth } from '../context/AuthContext.jsx'
+import { CheckCircle2, UserCheck } from 'lucide-react'
 import { api } from '../api.js'
-
-const initialForm = {
-  fullName: '',
-  phone: '',
-  address: '',
-  city: '',
-  paymentMethod: 'cod',
-}
 
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart()
   const { t } = useLanguage()
+  const { user } = useAuth()
   const navigate = useNavigate()
-  const [form, setForm] = useState(initialForm)
+
+  const [form, setForm] = useState({
+    fullName: '',
+    phone: '',
+    address: '',
+    city: '',
+    paymentMethod: 'cod',
+  })
+  const [prefilled, setPrefilled] = useState(false)
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [placed, setPlaced] = useState(false)
+  const [orderId, setOrderId] = useState(null)
+
+  // Auto-fill form from logged-in user's profile data
+  useEffect(() => {
+    if (user) {
+      const hasData = user.name || user.phone || user.address
+      if (hasData) {
+        setForm((f) => ({
+          ...f,
+          fullName: user.name || '',
+          phone: user.phone || '',
+          address: user.address || '',
+          city: user.city || '',
+        }))
+        setPrefilled(true)
+      }
+    }
+  }, [user])
 
   const shipping = subtotal >= 1500 || subtotal === 0 ? 0 : 80
   const total = subtotal + shipping
@@ -38,9 +59,6 @@ export default function Checkout() {
     if (!form.city.trim()) errs.city = t('checkout.errCity')
     return errs
   }
-
-  const [placed, setPlaced] = useState(false)
-  const [orderId, setOrderId] = useState(null)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -109,9 +127,23 @@ export default function Checkout() {
       <h1 className="font-display text-3xl text-ink mb-8">{t('checkout.title')}</h1>
       <div className="grid lg:grid-cols-3 gap-10">
         <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-5" noValidate>
-          <h2 className="font-display text-lg text-ink">{t('checkout.deliveryInfo')}</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-lg text-ink">{t('checkout.deliveryInfo')}</h2>
+            {user && prefilled && (
+              <span className="flex items-center gap-1.5 text-xs text-sage font-medium bg-sage/10 px-3 py-1.5 rounded-full">
+                <UserCheck size={13} />
+                {t('checkout.autoFilled')}
+              </span>
+            )}
+          </div>
 
-          <Field label={t('checkout.fullName')} name="fullName" value={form.fullName} onChange={handleChange} error={errors.fullName} />
+          <Field
+            label={t('checkout.fullName')}
+            name="fullName"
+            value={form.fullName}
+            onChange={handleChange}
+            error={errors.fullName}
+          />
           <Field
             label={t('checkout.phone')}
             name="phone"
@@ -120,8 +152,21 @@ export default function Checkout() {
             error={errors.phone}
             placeholder="01XXXXXXXXX"
           />
-          <Field label={t('checkout.address')} name="address" value={form.address} onChange={handleChange} error={errors.address} as="textarea" />
-          <Field label={t('checkout.city')} name="city" value={form.city} onChange={handleChange} error={errors.city} />
+          <Field
+            label={t('checkout.address')}
+            name="address"
+            value={form.address}
+            onChange={handleChange}
+            error={errors.address}
+            as="textarea"
+          />
+          <Field
+            label={t('checkout.city')}
+            name="city"
+            value={form.city}
+            onChange={handleChange}
+            error={errors.city}
+          />
 
           <h2 className="font-display text-lg text-ink pt-4">{t('checkout.paymentMethod')}</h2>
           <div className="space-y-3">
@@ -161,13 +206,13 @@ export default function Checkout() {
             disabled={submitting}
             className="w-full bg-clay text-sand py-3.5 rounded-md font-medium hover:bg-clay-dark transition-colors mt-2 disabled:opacity-60"
           >
-            {submitting ? 'অর্ডার দেওয়া হচ্ছে...' : t('checkout.confirmOrder')}
+            {submitting ? t('checkout.placingOrder') : t('checkout.confirmOrder')}
           </button>
         </form>
 
-        {/* অর্ডার সামারি */}
+        {/* Order Summary */}
         <div className="lg:col-span-1">
-          <div className="bg-stone rounded-xl p-6 sticky top-24">
+          <div className="bg-stone rounded-xl p-5 sm:p-6 lg:sticky lg:top-24">
             <h2 className="font-display text-lg text-ink mb-5">{t('cart.orderSummary')}</h2>
             <div className="space-y-3 mb-5 max-h-64 overflow-y-auto thin-scroll">
               {items.map((item) => (

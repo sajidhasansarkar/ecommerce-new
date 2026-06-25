@@ -62,7 +62,7 @@ export default function Shop() {
       <div className="mb-8">
         <h1 className="font-display text-3xl lg:text-4xl text-ink mb-2">{categoryTitle}</h1>
         <p className="text-ink/60 text-sm">
-          {loading ? 'লোড হচ্ছে...' : searchQuery ? t('shop.resultsFor', searchQuery, filtered.length) : t('shop.productsFound', filtered.length)}
+          {loading ? t('common.loading') : searchQuery ? t('shop.resultsFor', searchQuery, filtered.length) : t('shop.productsFound', filtered.length)}
         </p>
       </div>
 
@@ -104,11 +104,18 @@ export default function Shop() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-5 gap-y-8">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="animate-pulse">
-                  <div className="aspect-[4/5] rounded-lg bg-stone mb-3" />
-                  <div className="h-4 bg-stone rounded w-3/4 mb-2" />
-                  <div className="h-3 bg-stone rounded w-1/2" />
+                  <div className="relative aspect-[4/5] rounded-lg bg-stone mb-3 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-stone-dark/50 to-transparent" style={{animation:'shimmer 1.5s infinite', transform:'translateX(-100%)', animationTimingFunction:'linear'}} />
+                    <div className="absolute bottom-3 right-3 h-7 w-16 bg-stone-dark rounded" />
+                  </div>
+                  <div className="h-4 bg-stone rounded-md w-3/4 mb-2" />
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-3 w-3 bg-stone rounded-full" />
+                    <div className="h-3 bg-stone rounded-md w-1/2" />
+                  </div>
                 </div>
               ))}
+              <style>{"@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}.shimmer-anim{animation:shimmer 1.5s linear infinite}"}</style>
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-20">

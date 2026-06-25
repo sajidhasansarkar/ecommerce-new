@@ -26,6 +26,7 @@ export const api = {
     me: () => request('GET', '/api/auth/me'),
     updateProfile: (data) => request('PUT', '/api/auth/profile', data),
     google: (credential) => request('POST', '/api/auth/google', { credential }),
+    facebook: (credential) => request('POST', '/api/auth/facebook', { credential }),
     sendOtp: (phone) => request('POST', '/api/auth/send-otp', { phone }),
     verifyOtp: (phone, otp) => request('POST', '/api/auth/verify-otp', { phone, otp }),
   },
@@ -47,6 +48,13 @@ export const api = {
     },
     get: (id) => request('GET', `/api/orders/${id}`),
     updateStatus: (id, status) => request('PUT', `/api/orders/${id}/status`, { status }),
+    update: (id, data) => request('PUT', `/api/orders/${id}`, data),
+    delete: (id) => request('DELETE', `/api/orders/${id}`),
+    deleteCancelled: () => request('DELETE', '/api/orders/bulk/cancelled'),
     customers: () => request('GET', '/api/orders/customers'),
+  },
+  settings: {
+    get: () => request('GET', '/api/settings'),
+    update: (data) => request('PUT', '/api/settings', data),
   },
 }

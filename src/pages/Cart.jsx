@@ -30,7 +30,7 @@ export default function Cart() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <h1 className="font-display text-3xl text-ink mb-8">{t('cart.title')}</h1>
 
-      <div className="grid lg:grid-cols-3 gap-10">
+      <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => (
             <div key={item.key} className="flex gap-4 border-b border-stone-dark pb-5">
@@ -89,7 +89,7 @@ export default function Cart() {
 
         {/* অর্ডার সামারি */}
         <div className="lg:col-span-1">
-          <div className="bg-stone rounded-xl p-6 sticky top-24">
+          <div className="bg-stone rounded-xl p-5 sm:p-6 lg:sticky lg:top-24">
             <h2 className="font-display text-lg text-ink mb-5">{t('cart.orderSummary')}</h2>
             <div className="space-y-3 text-sm mb-5">
               <div className="flex justify-between text-ink/70">

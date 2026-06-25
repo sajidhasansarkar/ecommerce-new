@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { ShoppingBag, Search, Menu, X, Languages } from 'lucide-react'
+import { ShoppingBag, Search, Menu, X, Languages, LogOut } from 'lucide-react'
 import { useCart } from '../context/CartContext.jsx'
 import { useLanguage } from '../context/LanguageContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -11,8 +11,14 @@ export default function Navbar() {
   const [query, setQuery] = useState('')
   const { itemCount } = useCart()
   const { lang, toggleLang, t } = useLanguage()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
+
+  function handleMobileLogout() {
+    logout()
+    setOpen(false)
+    navigate('/')
+  }
 
   const navLinks = [
     { to: '/shop', label: t('nav.shop') },
@@ -67,18 +73,18 @@ export default function Navbar() {
 
             <button
               onClick={toggleLang}
-              className="flex items-center gap-1.5 text-sm font-medium text-ink/70 hover:text-clay transition-colors border border-stone-dark rounded-full px-3 py-1.5"
+              className="tap-tight inline-flex items-center gap-1 text-xs font-medium text-ink/70 hover:text-clay transition-colors border border-stone-dark rounded-full px-2.5 py-1"
             >
-              <Languages size={15} />
+              <Languages size={13} />
               {lang === 'bn' ? 'বাং' : 'EN'}
             </button>
 
             <UserMenu />
 
-            <Link to="/cart" aria-label={t('nav.cart')} className="relative text-ink/70 hover:text-clay transition-colors">
+            <Link to="/cart" aria-label={t('nav.cart')} className="relative inline-flex items-center justify-center text-ink/70 hover:text-clay transition-colors tap-tight">
               <ShoppingBag size={20} />
               {itemCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-clay text-sand text-[10px] font-semibold w-5 h-5 rounded-full flex items-center justify-center">
+                <span className="absolute -top-2 -right-2 bg-clay text-sand text-[10px] font-semibold w-5 h-5 rounded-full flex items-center justify-center leading-none">
                   {itemCount}
                 </span>
               )}
@@ -88,20 +94,20 @@ export default function Navbar() {
           <div className="flex items-center gap-4 lg:hidden">
             <button
               onClick={toggleLang}
-              className="flex items-center gap-1 text-xs font-medium text-ink/70 border border-stone-dark rounded-full px-2.5 py-1"
+              className="tap-tight inline-flex items-center gap-1 text-xs font-medium text-ink/70 border border-stone-dark rounded-full px-2 py-1"
             >
-              <Languages size={13} />
+              <Languages size={12} />
               {lang === 'bn' ? 'বাং' : 'EN'}
             </button>
-            <Link to="/cart" className="relative text-ink/80">
+            <Link to="/cart" className="relative inline-flex items-center justify-center text-ink/80 tap-tight">
               <ShoppingBag size={22} />
               {itemCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-clay text-sand text-[10px] font-semibold w-5 h-5 rounded-full flex items-center justify-center">
+                <span className="absolute -top-2 -right-2 bg-clay text-sand text-[10px] font-semibold w-5 h-5 rounded-full flex items-center justify-center leading-none">
                   {itemCount}
                 </span>
               )}
             </Link>
-            <button onClick={() => setOpen(!open)}>
+            <button onClick={() => setOpen(!open)} className="tap-tight inline-flex items-center justify-center text-ink/80">
               {open ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
@@ -109,7 +115,7 @@ export default function Navbar() {
       </div>
 
       {open && (
-        <div className="lg:hidden border-t border-stone-dark bg-sand px-4 sm:px-6 py-5 space-y-4">
+        <div className="lg:hidden mobile-nav-open border-t border-stone-dark bg-sand px-4 sm:px-6 py-5 space-y-4">
           <form onSubmit={handleSearch} className="relative">
             <input
               type="text" value={query} onChange={(e) => setQuery(e.target.value)}
@@ -131,10 +137,16 @@ export default function Navbar() {
             ))}
             {user ? (
               <>
-                <Link to="/profile" onClick={() => setOpen(false)} className="text-base py-1 text-ink/80">প্রোফাইল</Link>
+                <Link to="/profile" onClick={() => setOpen(false)} className="text-base py-1 text-ink/80">{t('nav.profile')}</Link>
                 {user.role === 'admin' && (
-                  <Link to="/admin" onClick={() => setOpen(false)} className="text-base py-1 text-ink/80">অ্যাডমিন</Link>
+                  <Link to="/admin" onClick={() => setOpen(false)} className="text-base py-1 text-ink/80">{t('userMenu.admin')}</Link>
                 )}
+                <button
+                  onClick={handleMobileLogout}
+                  className="flex items-center gap-2 text-base py-1 text-red-500"
+                >
+                  <LogOut size={16} /> {t('nav.logout')}
+                </button>
               </>
             ) : (
               <Link to="/login" onClick={() => setOpen(false)} className="text-base py-1 text-ink/80">

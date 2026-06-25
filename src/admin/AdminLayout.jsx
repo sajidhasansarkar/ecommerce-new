@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Package, ShoppingCart, Users, ArrowLeft, LogOut } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, Settings, ArrowLeft, LogOut } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 
@@ -24,6 +24,7 @@ export default function AdminLayout() {
     { to: '/admin/products', label: t('admin.products'), icon: Package },
     { to: '/admin/orders', label: t('admin.orders'), icon: ShoppingCart },
     { to: '/admin/customers', label: t('admin.customers'), icon: Users },
+    { to: '/admin/settings', label: 'সাইট সেটিংস', icon: Settings },
   ]
 
   if (!localStorage.getItem('adminToken')) return null

@@ -1,22 +1,445 @@
 import React, { useState, useEffect } from 'react'
-import { Eye, X, Loader2 } from 'lucide-react'
+import { Eye, Trash2, Pencil, Download, X, Loader2, AlertTriangle, Check, FileText } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext.jsx'
 import { api } from '../api.js'
 
-const statusColors = {
-  processing: 'bg-gold/20 text-gold',
-  shipped: 'bg-sage/20 text-sage',
-  delivered: 'bg-sage/30 text-ink',
-  cancelled: 'bg-clay/15 text-clay-dark',
+const STATUS_COLORS = {
+  processing: 'bg-amber-100 text-amber-700',
+  shipped:    'bg-blue-100 text-blue-700',
+  delivered:  'bg-green-100 text-green-700',
+  cancelled:  'bg-red-100 text-red-600',
+}
+const STATUS_BN = {
+  processing: 'প্রসেসিং',
+  shipped:    'শিপড',
+  delivered:  'ডেলিভার্ড',
+  cancelled:  'বাতিল',
+}
+const PAYMENT_BN = {
+  cod:   'ক্যাশ অন ডেলিভারি',
+  bkash: 'বিকাশ / নগদ',
 }
 
+function formatDate(d) {
+  return new Date(d).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+function formatDateEn(d) {
+  return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+/* ─── Build receipt HTML ─── */
+function buildReceiptHTML(order) {
+  const statusLabel = STATUS_BN[order.status] || order.status
+  const paymentLabel = PAYMENT_BN[order.paymentMethod] || order.paymentMethod
+
+  const statusStyle = {
+    processing: 'background:#fef3c7;color:#92400e',
+    shipped:    'background:#dbeafe;color:#1e40af',
+    delivered:  'background:#dcfce7;color:#166534',
+    cancelled:  'background:#fee2e2;color:#b91c1c',
+  }[order.status] || 'background:#f3f4f6;color:#374151'
+
+  const rows = order.items.map((item, i) => `
+    <tr style="background:${i % 2 === 0 ? '#fff' : '#fafaf9'}">
+      <td style="padding:10px 12px;border-bottom:1px solid #f0ede8">
+        <div style="font-weight:600;color:#1a1a1a">${item.name}</div>
+        ${item.size || item.color ? `<div style="font-size:11px;color:#9a8f85;margin-top:2px">${[item.size && `সাইজ: ${item.size}`, item.color && `রং: ${item.color}`].filter(Boolean).join(' · ')}</div>` : ''}
+      </td>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0ede8;text-align:center;color:#555">${item.qty}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0ede8;text-align:right;color:#555">৳${item.price.toLocaleString()}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0ede8;text-align:right;font-weight:600;color:#1a1a1a">৳${(item.price * item.qty).toLocaleString()}</td>
+    </tr>`).join('')
+
+  return `<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Receipt — ${order.orderNumber}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a1a;background:#f5f0e8;min-height:100vh;padding:32px 16px}
+  .page{max-width:680px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.10)}
+  .header{background:#1a1a1a;color:#fff;padding:28px 32px;display:flex;justify-content:space-between;align-items:flex-start}
+  .brand{font-size:28px;font-weight:800;letter-spacing:-1px}
+  .brand span{color:#c75d3c}
+  .receipt-label{text-align:right}
+  .receipt-label h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:#aaa;margin-bottom:6px}
+  .receipt-label .order-num{font-size:18px;font-weight:700;color:#fff;font-family:monospace}
+  .receipt-label .date{font-size:12px;color:#888;margin-top:4px}
+  .status-pill{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;margin-top:8px;${statusStyle}}
+  .body{padding:28px 32px}
+  .section{margin-bottom:24px}
+  .section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#b5a99a;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #f0ede8}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .info-item label{font-size:10px;color:#b5a99a;display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
+  .info-item p{font-size:14px;font-weight:600;color:#1a1a1a}
+  .info-item.full{grid-column:1/-1}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead tr{background:#f5f0e8}
+  thead th{padding:10px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9a8f85}
+  thead th:nth-child(2){text-align:center}
+  thead th:nth-child(3),thead th:nth-child(4){text-align:right}
+  .totals-box{background:#f5f0e8;border-radius:10px;padding:16px 20px;margin-top:20px}
+  .totals-row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;color:#6b5f57}
+  .totals-row.grand{font-size:17px;font-weight:800;color:#1a1a1a;border-top:2px solid #ddd8d0;padding-top:12px;margin-top:8px;margin-bottom:0}
+  .footer{background:#f5f0e8;padding:16px 32px;text-align:center;font-size:11px;color:#b5a99a;border-top:1px solid #ede8e0}
+  .footer strong{color:#9a8f85}
+  @media print{
+    body{background:#fff;padding:0}
+    .page{box-shadow:none;border-radius:0;max-width:100%}
+    @page{margin:10mm;size:A4}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="brand">লাবণ্য<span>.</span></div>
+    <div class="receipt-label">
+      <h2>অর্ডার রিসিট</h2>
+      <div class="order-num">${order.orderNumber}</div>
+      <div class="date">${formatDateEn(order.createdAt)}</div>
+      <div><span class="status-pill">${statusLabel}</span></div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="section">
+      <div class="section-title">ডেলিভারি তথ্য</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <label>গ্রাহকের নাম</label>
+          <p>${order.fullName}</p>
+        </div>
+        <div class="info-item">
+          <label>ফোন নম্বর</label>
+          <p>${order.phone}</p>
+        </div>
+        <div class="info-item full">
+          <label>ঠিকানা</label>
+          <p>${order.address}, ${order.city}</p>
+        </div>
+        <div class="info-item">
+          <label>পেমেন্ট পদ্ধতি</label>
+          <p>${paymentLabel}</p>
+        </div>
+        <div class="info-item">
+          <label>অর্ডারের তারিখ</label>
+          <p>${formatDateEn(order.createdAt)}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">প্রোডাক্টসমূহ</div>
+      <table>
+        <thead>
+          <tr>
+            <th>পণ্য</th>
+            <th style="text-align:center">পরিমাণ</th>
+            <th style="text-align:right">একক মূল্য</th>
+            <th style="text-align:right">মোট</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+
+      <div class="totals-box">
+        <div class="totals-row"><span>সাবটোটাল</span><span>৳${order.subtotal.toLocaleString()}</span></div>
+        <div class="totals-row"><span>ডেলিভারি চার্জ</span><span>${order.shipping === 0 ? 'বিনামূল্যে' : '৳' + order.shipping.toLocaleString()}</span></div>
+        <div class="totals-row grand"><span>সর্বমোট পরিশোধযোগ্য</span><span>৳${order.total.toLocaleString()}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <strong>লাবণ্য</strong> — ঢাকা, বাংলাদেশ &nbsp;·&nbsp; hello@yourstore.com
+    <br/>ধন্যবাদ আপনার অর্ডারের জন্য! এই রিসিটটি সংরক্ষণ করুন।
+  </div>
+</div>
+<script>
+  // Auto-open print dialog when opened standalone
+  if (window.opener === null && !document.referrer) {
+    window.addEventListener('load', () => setTimeout(() => window.print(), 300))
+  }
+</script>
+</body>
+</html>`
+}
+
+/* ─── Download receipt as HTML file ─── */
+function downloadReceipt(order) {
+  const html = buildReceiptHTML(order)
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `receipt-${order.orderNumber}.html`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+/* ─── Confirm Dialog ─── */
+function ConfirmDialog({ message, subMessage, onConfirm, onCancel, danger = true }) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-ink/60" onClick={onCancel} />
+      <div className="relative bg-sand rounded-xl p-6 w-full max-w-sm shadow-xl">
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-4 ${danger ? 'bg-red-100' : 'bg-amber-100'}`}>
+          <AlertTriangle size={20} className={danger ? 'text-red-500' : 'text-amber-500'} />
+        </div>
+        <p className="font-medium text-ink mb-1">{message}</p>
+        {subMessage && <p className="text-sm text-ink/60 mb-5">{subMessage}</p>}
+        <div className="flex gap-3 mt-5">
+          <button onClick={onCancel} className="flex-1 border border-stone-dark text-ink py-2 rounded-lg text-sm hover:bg-stone transition-colors">
+            বাতিল
+          </button>
+          <button onClick={onConfirm} className={`flex-1 py-2 rounded-lg text-sm font-medium text-sand transition-colors ${danger ? 'bg-red-500 hover:bg-red-600' : 'bg-clay hover:bg-clay-dark'}`}>
+            নিশ্চিত করুন
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Edit Modal ─── */
+function EditModal({ order, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    fullName: order.fullName,
+    phone: order.phone,
+    address: order.address,
+    city: order.city,
+    paymentMethod: order.paymentMethod,
+    status: order.status,
+  })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  function handleChange(e) {
+    setForm(f => ({ ...f, [e.target.name]: e.target.value }))
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    setError('')
+    try {
+      const updated = await api.orders.update(order._id, form)
+      onSaved(updated)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-ink/50" onClick={onClose} />
+      <div className="relative bg-sand rounded-xl w-full max-w-lg max-h-[92vh] overflow-y-auto thin-scroll shadow-xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-dark">
+          <h2 className="font-display text-lg text-ink">অর্ডার এডিট — {order.orderNumber}</h2>
+          <button onClick={onClose} className="tap-tight text-ink/50 hover:text-clay"><X size={20} /></button>
+        </div>
+        <div className="px-6 py-5 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="গ্রাহকের নাম" name="fullName" value={form.fullName} onChange={handleChange} />
+            <Field label="ফোন নম্বর" name="phone" value={form.phone} onChange={handleChange} />
+          </div>
+          <Field label="ঠিকানা" name="address" value={form.address} onChange={handleChange} as="textarea" />
+          <Field label="শহর" name="city" value={form.city} onChange={handleChange} />
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-ink/60 mb-1.5">পেমেন্ট পদ্ধতি</label>
+              <select name="paymentMethod" value={form.paymentMethod} onChange={handleChange}
+                className="w-full bg-stone border border-stone-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40">
+                <option value="cod">ক্যাশ অন ডেলিভারি</option>
+                <option value="bkash">বিকাশ / নগদ</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink/60 mb-1.5">স্ট্যাটাস</label>
+              <select name="status" value={form.status} onChange={handleChange}
+                className="w-full bg-stone border border-stone-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40">
+                <option value="processing">প্রসেসিং</option>
+                <option value="shipped">শিপড</option>
+                <option value="delivered">ডেলিভার্ড</option>
+                <option value="cancelled">বাতিল</option>
+              </select>
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-red-500">{error}</p>}
+        </div>
+        <div className="px-6 py-4 border-t border-stone-dark flex gap-3">
+          <button onClick={onClose} className="flex-1 border border-stone-dark text-ink py-2.5 rounded-lg text-sm hover:bg-stone transition-colors">
+            বাতিল
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            className="flex-1 bg-clay text-sand py-2.5 rounded-lg text-sm font-medium hover:bg-clay-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+            সেভ করুন
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Field({ label, name, value, onChange, as = 'input' }) {
+  const Tag = as
+  return (
+    <div>
+      <label className="block text-xs font-medium text-ink/60 mb-1.5">{label}</label>
+      <Tag
+        name={name} value={value} onChange={onChange}
+        rows={as === 'textarea' ? 2 : undefined}
+        className="w-full bg-stone border border-stone-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40 resize-none"
+      />
+    </div>
+  )
+}
+
+/* ─── View Modal ─── */
+function ViewModal({ order, onClose, onDownload, onEdit, onDelete, onStatusChange, updatingId }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-ink/50" onClick={onClose} />
+      <div className="relative bg-sand rounded-xl w-full max-w-lg max-h-[92vh] overflow-y-auto thin-scroll shadow-xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-dark">
+          <div>
+            <h2 className="font-display text-lg text-ink">{order.orderNumber}</h2>
+            <p className="text-xs text-ink/50">{formatDate(order.createdAt)}</p>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button onClick={onDownload} title="রিসিট ডাউনলোড করুন"
+              className="tap-tight flex items-center gap-1.5 bg-ink text-sand px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-clay transition-colors">
+              <Download size={13} /> রিসিট ডাউনলোড
+            </button>
+            <button onClick={onEdit} title="এডিট"
+              className="tap-tight p-2 text-ink/50 hover:text-clay transition-colors">
+              <Pencil size={16} />
+            </button>
+            <button onClick={onDelete} title="ডিলিট"
+              className="tap-tight p-2 text-ink/50 hover:text-red-500 transition-colors">
+              <Trash2 size={16} />
+            </button>
+            <button onClick={onClose} className="tap-tight p-2 text-ink/50 hover:text-clay"><X size={18} /></button>
+          </div>
+        </div>
+
+        <div className="px-6 py-5 space-y-5 text-sm">
+          {/* Customer info */}
+          <div className="grid grid-cols-2 gap-3">
+            <InfoRow label="গ্রাহকের নাম" value={order.fullName} />
+            <InfoRow label="ফোন" value={order.phone} />
+            <div className="col-span-2">
+              <InfoRow label="ঠিকানা" value={`${order.address}, ${order.city}`} />
+            </div>
+            <InfoRow label="পেমেন্ট" value={PAYMENT_BN[order.paymentMethod] || order.paymentMethod} />
+            <InfoRow label="স্ট্যাটাস" value={
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[order.status]}`}>
+                {STATUS_BN[order.status]}
+              </span>
+            } />
+          </div>
+
+          {/* Items */}
+          <div className="border-t border-stone-dark pt-4">
+            <p className="text-xs text-ink/50 mb-3 font-medium uppercase tracking-wide">প্রোডাক্টসমূহ</p>
+            <div className="space-y-2">
+              {order.items.map((item, i) => (
+                <div key={i} className="flex items-center gap-3 bg-stone/40 rounded-lg p-3">
+                  {item.image && (
+                    <img src={item.image} alt={item.name} className="w-10 h-10 rounded-md object-cover shrink-0 bg-stone" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-ink font-medium truncate">{item.name}</p>
+                    <p className="text-ink/50 text-xs">
+                      {item.size && `সাইজ: ${item.size}`}
+                      {item.size && item.color && ' · '}
+                      {item.color && `রং: ${item.color}`}
+                      {' · '}পরিমাণ: {item.qty}
+                    </p>
+                  </div>
+                  <span className="font-mono text-ink shrink-0">৳{(item.price * item.qty).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Totals */}
+          <div className="bg-stone/40 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between text-ink/70"><span>সাবটোটাল</span><span className="font-mono">৳{order.subtotal.toLocaleString()}</span></div>
+            <div className="flex justify-between text-ink/70"><span>ডেলিভারি চার্জ</span><span className="font-mono">{order.shipping === 0 ? 'বিনামূল্যে' : `৳${order.shipping.toLocaleString()}`}</span></div>
+            <div className="flex justify-between text-ink font-semibold border-t border-stone-dark pt-2 mt-1">
+              <span>সর্বমোট</span><span className="font-mono">৳{order.total.toLocaleString()}</span>
+            </div>
+          </div>
+
+          {/* Quick status change */}
+          <div className="border-t border-stone-dark pt-4">
+            <p className="text-xs text-ink/50 mb-2 font-medium uppercase tracking-wide">স্ট্যাটাস পরিবর্তন</p>
+            <div className="flex gap-2 flex-wrap">
+              {['processing','shipped','delivered','cancelled'].map(s => (
+                <button key={s}
+                  onClick={() => onStatusChange(order._id, s)}
+                  disabled={order.status === s || updatingId === order._id}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors disabled:opacity-50 ${
+                    order.status === s ? 'bg-ink text-sand' : 'bg-stone hover:bg-stone-dark text-ink'
+                  }`}
+                >
+                  {updatingId === order._id && order.status !== s
+                    ? <Loader2 size={12} className="animate-spin inline" />
+                    : STATUS_BN[s]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Download receipt CTA */}
+          <div className="border-t border-stone-dark pt-4">
+            <button onClick={onDownload}
+              className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-stone-dark text-ink/60 hover:border-clay hover:text-clay rounded-xl py-3 text-sm font-medium transition-colors">
+              <FileText size={16} />
+              রিসিট ডাউনলোড করুন (.html → print to PDF)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function InfoRow({ label, value }) {
+  return (
+    <div>
+      <p className="text-xs text-ink/50 mb-0.5">{label}</p>
+      <p className="text-ink font-medium">{value}</p>
+    </div>
+  )
+}
+
+/* ─── Main Component ─── */
 export default function AdminOrders() {
-  const { t } = useLanguage()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [selectedOrder, setSelectedOrder] = useState(null)
+  const [editingOrder, setEditingOrder] = useState(null)
   const [updatingId, setUpdatingId] = useState(null)
+  const [toast, setToast] = useState('')
+  const [confirm, setConfirm] = useState(null)
+
+  function showToast(msg) {
+    setToast(msg)
+    setTimeout(() => setToast(''), 3000)
+  }
 
   async function loadOrders() {
     try {
@@ -38,10 +461,9 @@ export default function AdminOrders() {
     setUpdatingId(orderId)
     try {
       await api.orders.updateStatus(orderId, newStatus)
-      setOrders((prev) => prev.map((o) => o._id === orderId ? { ...o, status: newStatus } : o))
-      if (selectedOrder?._id === orderId) {
-        setSelectedOrder((o) => ({ ...o, status: newStatus }))
-      }
+      setOrders(prev => prev.map(o => o._id === orderId ? { ...o, status: newStatus } : o))
+      if (selectedOrder?._id === orderId) setSelectedOrder(o => ({ ...o, status: newStatus }))
+      showToast('স্ট্যাটাস আপডেট হয়েছে ✓')
     } catch (err) {
       console.error(err)
     } finally {
@@ -49,161 +471,194 @@ export default function AdminOrders() {
     }
   }
 
+  async function handleDelete(orderId) {
+    try {
+      await api.orders.delete(orderId)
+      setOrders(prev => prev.filter(o => o._id !== orderId))
+      setSelectedOrder(null)
+      showToast('অর্ডার ডিলিট হয়েছে ✓')
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setConfirm(null)
+    }
+  }
+
+  async function handleDeleteCancelled() {
+    try {
+      const res = await api.orders.deleteCancelled()
+      setOrders(prev => prev.filter(o => o.status !== 'cancelled'))
+      showToast(res.message || 'বাতিল অর্ডার ডিলিট হয়েছে ✓')
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setConfirm(null)
+    }
+  }
+
+  function handleSaved(updated) {
+    setOrders(prev => prev.map(o => o._id === updated._id ? updated : o))
+    if (selectedOrder?._id === updated._id) setSelectedOrder(updated)
+    setEditingOrder(null)
+    showToast('অর্ডার আপডেট হয়েছে ✓')
+  }
+
+  const cancelledCount = orders.filter(o => o.status === 'cancelled').length
+
   const statuses = [
-    { key: 'all', label: t('admin.statusAll') },
-    { key: 'processing', label: t('admin.statusProcessing') },
-    { key: 'shipped', label: t('admin.statusShipped') },
-    { key: 'delivered', label: t('admin.statusDelivered') },
-    { key: 'cancelled', label: t('admin.statusCancelled') },
+    { key: 'all',        label: 'সকল' },
+    { key: 'processing', label: 'প্রসেসিং' },
+    { key: 'shipped',    label: 'শিপড' },
+    { key: 'delivered',  label: 'ডেলিভার্ড' },
+    { key: 'cancelled',  label: 'বাতিল' },
   ]
-
-  const statusLabel = {
-    processing: t('admin.statusProcessing'),
-    shipped: t('admin.statusShipped'),
-    delivered: t('admin.statusDelivered'),
-    cancelled: t('admin.statusCancelled'),
-  }
-
-  function formatDate(dateStr) {
-    return new Date(dateStr).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })
-  }
 
   return (
     <div>
-      <h1 className="font-display text-2xl lg:text-3xl text-ink mb-1">{t('admin.orders')}</h1>
-      <p className="text-ink/60 text-sm mb-6">{t('admin.ordersDesc')}</p>
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-5 right-5 z-[70] bg-ink text-sand text-sm px-4 py-2.5 rounded-lg shadow-lg flex items-center gap-2 animate-fade-up">
+          <Check size={14} className="text-sage" /> {toast}
+        </div>
+      )}
 
-      <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
-        {statuses.map((s) => (
+      {/* Confirm Dialogs */}
+      {confirm?.type === 'delete' && (
+        <ConfirmDialog
+          message="এই অর্ডারটি মুছে ফেলবেন?"
+          subMessage="এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।"
+          onConfirm={() => handleDelete(confirm.id)}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
+      {confirm?.type === 'deleteCancelled' && (
+        <ConfirmDialog
+          message={`${cancelledCount}টি বাতিল অর্ডার মুছে ফেলবেন?`}
+          subMessage="সকল বাতিল অর্ডার স্থায়ীভাবে মুছে যাবে।"
+          onConfirm={handleDeleteCancelled}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
+
+      {/* Edit Modal */}
+      {editingOrder && (
+        <EditModal
+          order={editingOrder}
+          onClose={() => setEditingOrder(null)}
+          onSaved={handleSaved}
+        />
+      )}
+
+      {/* View Modal */}
+      {selectedOrder && !editingOrder && (
+        <ViewModal
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onDownload={() => { downloadReceipt(selectedOrder); showToast('রিসিট ডাউনলোড হচ্ছে ✓') }}
+          onEdit={() => setEditingOrder(selectedOrder)}
+          onDelete={() => setConfirm({ type: 'delete', id: selectedOrder._id })}
+          onStatusChange={handleStatusChange}
+          updatingId={updatingId}
+        />
+      )}
+
+      {/* Page Header */}
+      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
+        <div>
+          <h1 className="font-display text-2xl lg:text-3xl text-ink mb-1">অর্ডার ম্যানেজমেন্ট</h1>
+          <p className="text-ink/60 text-sm">সকল অর্ডার দেখুন, এডিট করুন ও রিসিট ডাউনলোড করুন</p>
+        </div>
+        {cancelledCount > 0 && (
           <button
-            key={s.key}
-            onClick={() => setFilter(s.key)}
+            onClick={() => setConfirm({ type: 'deleteCancelled' })}
+            className="flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
+          >
+            <Trash2 size={14} /> {cancelledCount}টি বাতিল অর্ডার মুছুন
+          </button>
+        )}
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
+        {statuses.map(s => (
+          <button key={s.key} onClick={() => setFilter(s.key)}
             className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
               filter === s.key ? 'bg-ink text-sand' : 'bg-stone text-ink/60 hover:bg-stone-dark'
-            }`}
-          >
+            }`}>
             {s.label}
+            {s.key === 'cancelled' && cancelledCount > 0 && (
+              <span className="ml-1.5 bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5">{cancelledCount}</span>
+            )}
           </button>
         ))}
       </div>
 
+      {/* Orders Table */}
       {loading ? (
-        <div className="text-ink/50 py-10 text-center">লোড হচ্ছে...</div>
+        <div className="text-ink/50 py-10 text-center flex items-center justify-center gap-2">
+          <Loader2 size={16} className="animate-spin" /> লোড হচ্ছে...
+        </div>
       ) : (
         <div className="bg-sand rounded-xl border border-stone-dark overflow-hidden">
           <div className="overflow-x-auto thin-scroll">
             <table className="w-full text-sm">
               <thead className="bg-stone/50 text-left text-ink/60 text-xs uppercase tracking-wide">
                 <tr>
-                  <th className="px-4 py-3">{t('admin.orderIdCol')}</th>
-                  <th className="px-4 py-3">{t('admin.customerCol')}</th>
-                  <th className="px-4 py-3">{t('admin.dateCol')}</th>
-                  <th className="px-4 py-3">{t('admin.totalCol')}</th>
-                  <th className="px-4 py-3">{t('admin.statusCol')}</th>
-                  <th className="px-4 py-3 text-right">{t('admin.viewCol')}</th>
+                  <th className="px-4 py-3">অর্ডার নম্বর</th>
+                  <th className="px-4 py-3">গ্রাহক</th>
+                  <th className="px-4 py-3">তারিখ</th>
+                  <th className="px-4 py-3">মোট</th>
+                  <th className="px-4 py-3">স্ট্যাটাস</th>
+                  <th className="px-4 py-3 text-right">অ্যাকশন</th>
                 </tr>
               </thead>
               <tbody>
-                {orders.map((o) => (
-                  <tr key={o._id} className="border-t border-stone-dark">
-                    <td className="px-4 py-3 font-mono text-ink">{o.orderNumber}</td>
-                    <td className="px-4 py-3 text-ink">{o.fullName}</td>
-                    <td className="px-4 py-3 text-ink/60">{formatDate(o.createdAt)}</td>
-                    <td className="px-4 py-3 font-mono text-ink">৳{o.total}</td>
+                {orders.map(o => (
+                  <tr key={o._id} className="border-t border-stone-dark hover:bg-stone/30 transition-colors">
+                    <td className="px-4 py-3 font-mono text-ink text-xs">{o.orderNumber}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[o.status]}`}>
-                        {statusLabel[o.status]}
+                      <p className="text-ink font-medium">{o.fullName}</p>
+                      <p className="text-ink/50 text-xs">{o.phone}</p>
+                    </td>
+                    <td className="px-4 py-3 text-ink/60 text-xs">{formatDate(o.createdAt)}</td>
+                    <td className="px-4 py-3 font-mono text-ink">৳{o.total.toLocaleString()}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[o.status]}`}>
+                        {STATUS_BN[o.status]}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <button onClick={() => setSelectedOrder(o)} className="p-1.5 text-ink/50 hover:text-clay">
-                        <Eye size={15} />
-                      </button>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        {/* Download receipt directly from table row */}
+                        <button
+                          onClick={() => { downloadReceipt(o); showToast('রিসিট ডাউনলোড হচ্ছে ✓') }}
+                          title="রিসিট ডাউনলোড"
+                          className="tap-tight p-1.5 text-ink/40 hover:text-clay transition-colors">
+                          <Download size={14} />
+                        </button>
+                        <button onClick={() => setEditingOrder(o)} title="এডিট"
+                          className="tap-tight p-1.5 text-ink/40 hover:text-clay transition-colors">
+                          <Pencil size={14} />
+                        </button>
+                        <button onClick={() => setSelectedOrder(o)} title="দেখুন"
+                          className="tap-tight p-1.5 text-ink/40 hover:text-clay transition-colors">
+                          <Eye size={14} />
+                        </button>
+                        <button onClick={() => setConfirm({ type: 'delete', id: o._id })} title="ডিলিট"
+                          className="tap-tight p-1.5 text-ink/40 hover:text-red-500 transition-colors">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
                 {orders.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-ink/40">কোনো অর্ডার নেই</td>
+                    <td colSpan={6} className="px-4 py-12 text-center text-ink/40">কোনো অর্ডার নেই</td>
                   </tr>
                 )}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {/* অর্ডার ডিটেইলস মোডাল */}
-      {selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-ink/50" onClick={() => setSelectedOrder(null)} />
-          <div className="relative bg-sand rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto thin-scroll">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-display text-xl text-ink">{selectedOrder.orderNumber}</h2>
-              <button onClick={() => setSelectedOrder(null)}><X size={20} /></button>
-            </div>
-
-            <div className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-ink/50 text-xs mb-0.5">গ্রাহকের নাম</p>
-                  <p className="text-ink font-medium">{selectedOrder.fullName}</p>
-                </div>
-                <div>
-                  <p className="text-ink/50 text-xs mb-0.5">ফোন</p>
-                  <p className="text-ink">{selectedOrder.phone}</p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-ink/50 text-xs mb-0.5">ঠিকানা</p>
-                  <p className="text-ink">{selectedOrder.address}, {selectedOrder.city}</p>
-                </div>
-                <div>
-                  <p className="text-ink/50 text-xs mb-0.5">পেমেন্ট</p>
-                  <p className="text-ink">{selectedOrder.paymentMethod === 'cod' ? 'ক্যাশ অন ডেলিভারি' : 'বিকাশ'}</p>
-                </div>
-                <div>
-                  <p className="text-ink/50 text-xs mb-0.5">তারিখ</p>
-                  <p className="text-ink">{formatDate(selectedOrder.createdAt)}</p>
-                </div>
-              </div>
-
-              <div className="border-t border-stone-dark pt-4">
-                <p className="text-ink/50 text-xs mb-2">প্রোডাক্টসমূহ</p>
-                {selectedOrder.items.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between py-2 border-b border-stone-dark/50 last:border-0">
-                    <div>
-                      <p className="text-ink">{item.name}</p>
-                      <p className="text-ink/50 text-xs">{item.color && `রং: ${item.color}`} {item.size && `| সাইজ: ${item.size}`} | পরিমাণ: {item.qty}</p>
-                    </div>
-                    <p className="font-mono text-ink">৳{item.price * item.qty}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="bg-stone/40 rounded-lg p-3 space-y-1">
-                <div className="flex justify-between text-ink/70"><span>সাবটোটাল</span><span className="font-mono">৳{selectedOrder.subtotal}</span></div>
-                <div className="flex justify-between text-ink/70"><span>ডেলিভারি</span><span className="font-mono">৳{selectedOrder.shipping}</span></div>
-                <div className="flex justify-between text-ink font-medium border-t border-stone-dark pt-1 mt-1"><span>মোট</span><span className="font-mono">৳{selectedOrder.total}</span></div>
-              </div>
-
-              <div>
-                <p className="text-ink/50 text-xs mb-2">স্ট্যাটাস পরিবর্তন করুন</p>
-                <div className="flex gap-2 flex-wrap">
-                  {['processing', 'shipped', 'delivered', 'cancelled'].map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => handleStatusChange(selectedOrder._id, s)}
-                      disabled={selectedOrder.status === s || updatingId === selectedOrder._id}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors disabled:opacity-50 ${
-                        selectedOrder.status === s ? 'bg-ink text-sand' : 'bg-stone hover:bg-stone-dark text-ink'
-                      }`}
-                    >
-                      {updatingId === selectedOrder._id && selectedOrder.status !== s ? <Loader2 size={12} className="animate-spin inline" /> : statusLabel[s]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )}

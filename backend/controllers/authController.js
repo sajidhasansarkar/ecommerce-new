@@ -1,8 +1,7 @@
 import jwt from 'jsonwebtoken'
-import { OAuth2Client } from 'google-auth-library'
+import crypto from 'crypto'
+import admin from '../config/firebaseAdmin.js'
 import User from '../models/User.js'
-
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
 // JWT expires in 7 days (was 30d)
 function generateToken(id) {
@@ -78,39 +77,39 @@ export async function updateProfile(req, res) {
   }
 }
 
-// POST /api/auth/google — properly verifies Google ID token signature
+// POST /api/auth/google — verifies a Firebase ID token (sent from frontend after signInWithPopup)
 export async function googleAuth(req, res) {
   try {
     const { credential } = req.body
-    if (!credential) return res.status(400).json({ message: 'Google credential missing' })
+    if (!credential) return res.status(400).json({ message: 'Firebase ID token missing' })
 
-    if (!process.env.GOOGLE_CLIENT_ID) {
-      return res.status(500).json({ message: 'Google Client ID কনফিগার করা নেই' })
+    // Verify the Firebase ID token with Firebase Admin SDK
+    let decoded
+    try {
+      decoded = await admin.auth().verifyIdToken(credential)
+    } catch {
+      return res.status(401).json({ message: 'Google লগইন যাচাই করা যায়নি' })
     }
 
-    // Verify the token with Google's public keys (fixes the critical unverified JWT bug)
-    const ticket = await googleClient.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    })
-    const { sub: googleId, email, name, picture } = ticket.getPayload()
+    const { uid: googleId, email, name, picture } = decoded
 
     if (!googleId || !email) return res.status(400).json({ message: 'Invalid Google payload' })
 
+    // Find or create user
     let user = await User.findOne({ googleId })
     if (!user) {
       user = await User.findOne({ email })
       if (user) {
         user.googleId = googleId
-        user.avatar = picture
+        if (picture) user.avatar = picture
         await user.save()
       } else {
         user = await User.create({
-          name,
+          name: name || email.split('@')[0],
           email,
           googleId,
-          avatar: picture,
-          password: require('crypto').randomBytes(32).toString('hex'),
+          avatar: picture || '',
+          password: crypto.randomBytes(32).toString('hex'),
         })
       }
     }
@@ -118,11 +117,56 @@ export async function googleAuth(req, res) {
     res.json(userResponse(user))
   } catch (err) {
     console.error('Google auth error:', err.message)
-    res.status(401).json({ message: 'Google লগইন যাচাই করা যায়নি' })
+    res.status(500).json({ message: 'সার্ভার সমস্যা হয়েছে' })
   }
 }
 
-// POST /api/auth/send-otp
+// POST /api/auth/facebook — verifies a Firebase ID token from Facebook sign-in
+export async function facebookAuth(req, res) {
+  try {
+    const { credential } = req.body
+    if (!credential) return res.status(400).json({ message: 'Firebase ID token missing' })
+
+    let decoded
+    try {
+      decoded = await admin.auth().verifyIdToken(credential)
+    } catch {
+      return res.status(401).json({ message: 'Facebook লগইন যাচাই করা যায়নি' })
+    }
+
+    const { uid: facebookId, email, name, picture } = decoded
+
+    if (!facebookId) return res.status(400).json({ message: 'Invalid Facebook payload' })
+
+    // Find or create user
+    let user = await User.findOne({ facebookId })
+    if (!user && email) {
+      // Check if email already exists (Google or email/password account)
+      user = await User.findOne({ email })
+      if (user) {
+        user.facebookId = facebookId
+        if (picture && !user.avatar) user.avatar = picture
+        await user.save()
+      }
+    }
+    if (!user) {
+      user = await User.create({
+        name: name || (email ? email.split('@')[0] : 'Facebook User'),
+        email: email || undefined,
+        facebookId,
+        avatar: picture || '',
+        password: crypto.randomBytes(32).toString('hex'),
+      })
+    }
+
+    res.json(userResponse(user))
+  } catch (err) {
+    console.error('Facebook auth error:', err.message)
+    res.status(500).json({ message: 'সার্ভার সমস্যা হয়েছে' })
+  }
+}
+
+
 export async function sendOtp(req, res) {
   try {
     const { phone } = req.body
@@ -138,7 +182,7 @@ export async function sendOtp(req, res) {
         phone,
         otp,
         otpExpiry,
-        password: require('crypto').randomBytes(32).toString('hex'),
+        password: crypto.randomBytes(32).toString('hex'),
       })
     } else {
       user.otp = otp
