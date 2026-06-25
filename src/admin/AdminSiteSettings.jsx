@@ -248,8 +248,8 @@ function LivePreview({ heroSlider, categoryImages, promoBanner, marqueeItems }) 
 
 /* ——— Main ——— */
 export default function AdminSiteSettings() {
-  const { t } = useLanguage()
-  const { setLogoImage: setContextLogoImage } = useSiteSettings()
+  const { t, lang } = useLanguage()
+  const { setLogoImage: setContextLogoImage, setLightImage: setContextLightImage } = useSiteSettings()
   const { categories } = useCategories()
   const [loading, setLoading]   = useState(true)
   const [saving, setSaving]     = useState(false)
@@ -306,6 +306,7 @@ export default function AdminSiteSettings() {
       })
       setSuccess(true)
       setContextLogoImage(logoImage)
+      setContextLightImage(lightImage)
       setTimeout(() => setSuccess(false), 4000)
     } catch (e) { setError(e.message) }
     finally { setSaving(false) }
@@ -533,6 +534,25 @@ export default function AdminSiteSettings() {
                 </div>
               </div>
             )}
+
+            <div className="mt-6 pt-5 border-t border-stone-dark">
+              <p className="text-xs font-medium text-ink mb-1">{t('admin.lightImage')}</p>
+              <p className="text-xs text-ink/40 mb-3">{t('admin.lightImageDesc')}</p>
+              <ImagePicker
+                label={t('admin.addLightImage')}
+                value={lightImage}
+                onChange={setLightImage}
+                aspect="aspect-[4/1]"
+              />
+              {(lightImage || logoImage) && (
+                <div className="mt-3 p-3 bg-stone/40 rounded-lg border border-stone-dark">
+                  <p className="text-xs text-ink/40 mb-2">{t('admin.siteLogoPreviewNote')}</p>
+                  <div className="bg-[#1A1815] rounded-lg px-4 py-3 border border-stone-dark inline-flex items-center gap-2">
+                    <img src={lightImage || logoImage} alt="light logo preview" className="h-10 w-auto max-w-[160px] object-contain" onError={e => e.target.style.opacity='0.3'} />
+                  </div>
+                </div>
+              )}
+            </div>
           </AccordionSection>
         </div>
 

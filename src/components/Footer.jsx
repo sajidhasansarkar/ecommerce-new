@@ -2,9 +2,11 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Instagram, Facebook, Mail, MapPin, Phone, ChevronRight, Heart } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext.jsx'
+import { useSiteSettings } from '../context/SiteSettingsContext.jsx'
 
 export default function Footer() {
   const { t } = useLanguage()
+  const { logoImage, lightImage } = useSiteSettings()
   const [email, setEmail] = useState('')
   const [subscribed, setSubscribed] = useState(false)
 
@@ -74,7 +76,15 @@ export default function Footer() {
               {/* Brand Column */}
               <div className="footer-col footer-brand-col">
                 <div className="footer-logo-wrap">
-                  <h3 className="footer-brand-name">{t('brand.name')}</h3>
+                  {(lightImage || logoImage) ? (
+                    <img
+                      src={lightImage || logoImage}
+                      alt={t('brand.name')}
+                      className="footer-brand-logo"
+                    />
+                  ) : (
+                    <h3 className="footer-brand-name">{t('brand.name')}</h3>
+                  )}
                   <div className="footer-brand-line"></div>
                 </div>
                 <p className="footer-desc">{t('footer.desc')}</p>
@@ -275,6 +285,14 @@ export default function Footer() {
           font-family: 'Fraunces', Georgia, serif;
           font-size: 1.5rem;
           color: #FAF7F2;
+          margin-bottom: 6px;
+          animation: fadeSlideUp 0.6s ease both;
+        }
+        .footer-brand-logo {
+          height: 40px;
+          width: auto;
+          max-width: 160px;
+          object-fit: contain;
           margin-bottom: 6px;
           animation: fadeSlideUp 0.6s ease both;
         }
