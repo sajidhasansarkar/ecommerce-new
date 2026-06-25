@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext.jsx'
 import { useLanguage } from '../context/LanguageContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useCategories } from '../context/CategoryContext.jsx'
+import { useSiteSettings } from '../context/SiteSettingsContext.jsx'
 import UserMenu from './UserMenu.jsx'
 
 export default function Navbar() {
@@ -17,6 +18,7 @@ export default function Navbar() {
   const { lang, toggleLang, t } = useLanguage()
   const { user, logout } = useAuth()
   const { categories } = useCategories()
+  const { logoImage } = useSiteSettings()
   const navigate = useNavigate()
   const catMenuRef = useRef(null)
   const catLeaveTimer = useRef(null)
@@ -123,18 +125,28 @@ export default function Navbar() {
 
       <header className="sticky top-0 z-50 bg-sand/95 backdrop-blur-sm border-b border-stone-dark">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 lg:h-20">
+          <div className="relative flex items-center justify-between h-16 lg:h-20">
 
             {/* Brand */}
             <Link to="/" className="flex items-center gap-2 group shrink-0">
-              <span className="font-display text-2xl lg:text-3xl font-600 text-ink tracking-tight">
-                {t('brand.name')}
-              </span>
-              <span className="hidden sm:inline-block w-2 h-2 rounded-full bg-clay group-hover:scale-150 transition-transform" />
+              {logoImage ? (
+                <img
+                  src={logoImage}
+                  alt={t('brand.name')}
+                  className="h-10 lg:h-12 w-auto max-w-[160px] object-contain"
+                />
+              ) : (
+                <>
+                  <span className="font-display text-2xl lg:text-3xl font-600 text-ink tracking-tight">
+                    {t('brand.name')}
+                  </span>
+                  <span className="hidden sm:inline-block w-2 h-2 rounded-full bg-clay group-hover:scale-150 transition-transform" />
+                </>
+              )}
             </Link>
 
-            {/* Desktop nav */}
-            <nav className="hidden lg:flex items-center gap-7 mx-6">
+            {/* Desktop nav — absolutely centered in header */}
+            <nav className="hidden lg:flex items-center gap-6 absolute left-1/2 -translate-x-1/2">
 
               <NavLink to="/shop" end className={({ isActive }) =>
                 `nav-pill text-ink/80 hover:text-clay ${isActive ? 'active' : ''}`

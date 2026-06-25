@@ -5,6 +5,7 @@ import { LanguageProvider } from './context/LanguageContext.jsx'
 import { CartProvider } from './context/CartContext.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { CategoryProvider } from './context/CategoryContext.jsx'
+import { SiteSettingsProvider } from './context/SiteSettingsContext.jsx'
 import App from './App.jsx'
 import './index.css'
 
@@ -13,11 +14,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <LanguageProvider>
         <AuthProvider>
-          <CategoryProvider>
-            <CartProvider>
-              <App />
-            </CartProvider>
-          </CategoryProvider>
+          <SiteSettingsProvider>
+            <CategoryProvider>
+              <CartProvider>
+                <App />
+              </CartProvider>
+            </CategoryProvider>
+          </SiteSettingsProvider>
         </AuthProvider>
       </LanguageProvider>
     </BrowserRouter>

@@ -264,7 +264,8 @@ export default function AdminSiteSettings() {
   const [promoBanner,  setPromoBanner]  = useState({ image: '', title: '', subtitle: '', link: '/shop' })
   const [marqueeItems, setMarqueeItems] = useState(DEFAULT_MARQUEE)
   const [newMarquee,   setNewMarquee]   = useState('')
-  const [lightImage,   setLightImage]   = useState('')
+  const [lightImage,   setLightImage]   = useState('')  // kept for backward compat, unused
+  const [logoImage,    setLogoImage]    = useState('')
 
   useEffect(() => {
     api.settings.get()
@@ -276,6 +277,7 @@ export default function AdminSiteSettings() {
         setPromoBanner(s.promoBanner || { image: '', title: '', subtitle: '', link: '/shop' })
         setMarqueeItems(s.marqueeItems || DEFAULT_MARQUEE)
         setLightImage(s.lightImage || '')
+        setLogoImage(s.logoImage || '')
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
@@ -293,6 +295,7 @@ export default function AdminSiteSettings() {
         promoBanner,
         marqueeItems,
         lightImage,
+        logoImage,
       })
       setSuccess(true)
       setTimeout(() => setSuccess(false), 4000)
@@ -461,19 +464,31 @@ export default function AdminSiteSettings() {
             </div>
           </AccordionSection>
 
-          {/* 5. Light Logo Image */}
+          {/* 5. Site Logo */}
           <AccordionSection
             icon={Image}
-            title={t('admin.lightImage')}
-            desc={t('admin.lightImageDesc')}
-            badge={lightImage ? 1 : 0}
+            title={t('admin.siteLogo')}
+            desc={t('admin.siteLogoDesc')}
+            badge={logoImage ? 1 : 0}
           >
+            <div className="mb-4 px-3 py-2.5 bg-stone/50 rounded-lg border border-stone-dark text-xs text-ink/50 flex items-start gap-2">
+              <span className="shrink-0 mt-0.5">💡</span>
+              <span>{t('admin.siteLogoTip')}</span>
+            </div>
             <ImagePicker
-              label={t('admin.addLightImage')}
-              value={lightImage}
-              onChange={setLightImage}
-              aspect="aspect-[3/1]"
+              label={t('admin.siteLogoLabel')}
+              value={logoImage}
+              onChange={setLogoImage}
+              aspect="aspect-[4/1]"
             />
+            {logoImage && (
+              <div className="mt-3 p-3 bg-stone/40 rounded-lg border border-stone-dark">
+                <p className="text-xs text-ink/40 mb-2">{t('admin.siteLogoPreviewNote')}</p>
+                <div className="bg-sand rounded-lg px-4 py-3 border border-stone-dark inline-flex items-center gap-2">
+                  <img src={logoImage} alt="logo preview" className="h-10 w-auto max-w-[160px] object-contain" onError={e => e.target.style.opacity='0.3'} />
+                </div>
+              </div>
+            )}
           </AccordionSection>
         </div>
 

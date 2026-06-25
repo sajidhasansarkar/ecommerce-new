@@ -1,18 +1,20 @@
 import React, { useEffect } from 'react'
 import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Package, ShoppingCart, Users, Settings, ArrowLeft, LogOut, Tag } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, Settings, ArrowLeft, LogOut, Tag, Loader2 } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 
 export default function AdminLayout() {
   const { t } = useLanguage()
-  const { user, logout } = useAuth()
+  const { user, loading, logout } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken')
-    if (!token) navigate('/login', { replace: true })
-  }, [navigate])
+    // loading শেষ হওয়ার পরেই check করব — আগে করলে flicker হয়
+    if (!loading && !localStorage.getItem('adminToken')) {
+      navigate('/login', { replace: true })
+    }
+  }, [loading, navigate])
 
   function handleLogout() {
     logout()
@@ -28,6 +30,16 @@ export default function AdminLayout() {
     { to: '/admin/settings', label: t('admin.siteSettings'), icon: Settings },
   ]
 
+  // Auth লোড হওয়ার আগে loading spinner দেখাও — এটাই reload-এ error ঠেকায়
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-stone flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-clay" />
+      </div>
+    )
+  }
+
+  // Token নেই — useEffect navigate করবে, এখানে কিছু render করব না
   if (!localStorage.getItem('adminToken')) return null
 
   return (
