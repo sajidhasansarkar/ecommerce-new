@@ -8,8 +8,9 @@ import {
   facebookAuth,
   sendOtp,
   verifyOtp,
+  getUsers,
 } from '../controllers/authController.js'
-import { protect } from '../middleware/auth.js'
+import { protect, adminOnly } from '../middleware/auth.js'
 import { authLimiter } from '../middleware/rateLimiter.js'
 
 const router = express.Router()
@@ -25,5 +26,6 @@ router.post('/verify-otp', authLimiter, verifyOtp)
 // Protected profile routes
 router.get('/me', protect, getMe)
 router.put('/profile', protect, updateProfile)
+router.get('/users', protect, adminOnly, getUsers)
 
 export default router

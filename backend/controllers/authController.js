@@ -220,3 +220,15 @@ export async function verifyOtp(req, res) {
     res.status(500).json({ message: err.message })
   }
 }
+
+// GET /api/auth/users — admin: all registered users
+export async function getUsers(req, res) {
+  try {
+    const users = await User.find({})
+      .select('-password -otp -otpExpiry')
+      .sort({ createdAt: -1 })
+    res.json(users)
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}

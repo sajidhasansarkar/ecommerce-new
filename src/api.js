@@ -29,6 +29,7 @@ export const api = {
     facebook: (credential) => request('POST', '/api/auth/facebook', { credential }),
     sendOtp: (phone) => request('POST', '/api/auth/send-otp', { phone }),
     verifyOtp: (phone, otp) => request('POST', '/api/auth/verify-otp', { phone, otp }),
+    users: () => request('GET', '/api/auth/users'),
   },
   products: {
     list: (params = {}) => {
