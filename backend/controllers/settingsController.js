@@ -17,9 +17,11 @@ export async function getSettings(req, res) {
 export async function updateSettings(req, res) {
   try {
     const s = await getOrCreate()
-    const { heroImage, categoryImages, heroSlider, promoBanner, marqueeItems } = req.body
+    const { heroImage, categoryImages, heroSlider, promoBanner, marqueeItems, lightImage, logoImage } = req.body
 
-    if (typeof heroImage === 'string') s.heroImage = heroImage
+    if (typeof heroImage   === 'string') s.heroImage   = heroImage
+    if (typeof lightImage  === 'string') s.lightImage  = lightImage
+    if (typeof logoImage   === 'string') s.logoImage   = logoImage
     if (categoryImages) {
       if (categoryImages.shoes !== undefined) s.categoryImages.shoes = categoryImages.shoes
       if (categoryImages.bags  !== undefined) s.categoryImages.bags  = categoryImages.bags
