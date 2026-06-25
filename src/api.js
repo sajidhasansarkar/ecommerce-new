@@ -54,6 +54,13 @@ export const api = {
     deleteCancelled: () => request('DELETE', '/api/orders/bulk/cancelled'),
     customers: () => request('GET', '/api/orders/customers'),
   },
+  categories: {
+    list: () => request('GET', '/api/categories'),
+    all: () => request('GET', '/api/categories/all'),
+    create: (data) => request('POST', '/api/categories', data),
+    update: (id, data) => request('PUT', `/api/categories/${id}`, data),
+    delete: (id) => request('DELETE', `/api/categories/${id}`),
+  },
   settings: {
     get: () => request('GET', '/api/settings'),
     update: (data) => request('PUT', '/api/settings', data),

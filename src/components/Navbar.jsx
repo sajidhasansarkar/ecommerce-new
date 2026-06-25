@@ -1,30 +1,39 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { ShoppingBag, Search, Menu, X, Languages, LogOut } from 'lucide-react'
+import { ShoppingBag, Search, Menu, X, Languages, LogOut, ChevronDown } from 'lucide-react'
 import { useCart } from '../context/CartContext.jsx'
 import { useLanguage } from '../context/LanguageContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useCategories } from '../context/CategoryContext.jsx'
 import UserMenu from './UserMenu.jsx'
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
+  const [catOpen, setCatOpen] = useState(false)
   const [query, setQuery] = useState('')
   const { itemCount } = useCart()
   const { lang, toggleLang, t } = useLanguage()
   const { user, logout } = useAuth()
+  const { categories } = useCategories()
   const navigate = useNavigate()
+  const dropdownRef = useRef(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClick(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setCatOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   function handleMobileLogout() {
     logout()
     setOpen(false)
     navigate('/')
   }
-
-  const navLinks = [
-    { to: '/shop', label: t('nav.shop') },
-    { to: '/shop?category=shoes', label: t('nav.shoes') },
-    { to: '/shop?category=bags', label: t('nav.bags') },
-  ]
 
   function handleSearch(e) {
     e.preventDefault()
@@ -46,17 +55,53 @@ export default function Navbar() {
             <span className="hidden sm:inline-block w-2 h-2 rounded-full bg-clay group-hover:scale-150 transition-transform" />
           </Link>
 
+          {/* Desktop nav */}
           <nav className="hidden lg:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <NavLink
-                key={link.to} to={link.to}
-                className={({ isActive }) =>
-                  `font-body text-sm tracking-wide transition-colors hover:text-clay ${isActive ? 'text-clay font-medium' : 'text-ink/80'}`
-                }
+            <NavLink
+              to="/shop"
+              end
+              className={({ isActive }) =>
+                `font-body text-sm tracking-wide transition-colors hover:text-clay ${isActive ? 'text-clay font-medium' : 'text-ink/80'}`
+              }
+            >
+              {t('nav.shop')}
+            </NavLink>
+
+            {/* Categories dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setCatOpen((v) => !v)}
+                className="flex items-center gap-1 font-body text-sm tracking-wide text-ink/80 hover:text-clay transition-colors"
               >
-                {link.label}
-              </NavLink>
-            ))}
+                {lang === 'bn' ? 'ক্যাটাগরি' : 'Categories'}
+                <ChevronDown size={14} className={`transition-transform ${catOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {catOpen && (
+                <div className="absolute top-full left-0 mt-2 w-48 bg-sand border border-stone-dark rounded-lg shadow-md py-1 z-50">
+                  {categories.map((cat) => (
+                    <NavLink
+                      key={cat.key}
+                      to={`/shop?category=${cat.key}`}
+                      onClick={() => setCatOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2 px-4 py-2.5 text-sm transition-colors hover:bg-stone hover:text-clay ${
+                          isActive ? 'text-clay font-medium bg-stone/50' : 'text-ink/80'
+                        }`
+                      }
+                    >
+                      {cat.icon && <span>{cat.icon}</span>}
+                      {lang === 'bn' ? cat.name.bn : cat.name.en}
+                    </NavLink>
+                  ))}
+                  {categories.length === 0 && (
+                    <p className="px-4 py-2 text-sm text-ink/40">
+                      {lang === 'bn' ? 'কোনো ক্যাটাগরি নেই' : 'No categories'}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </nav>
 
           <div className="hidden lg:flex items-center gap-4">
@@ -91,6 +136,7 @@ export default function Navbar() {
             </Link>
           </div>
 
+          {/* Mobile right-side icons */}
           <div className="flex items-center gap-4 lg:hidden">
             <button
               onClick={toggleLang}
@@ -114,6 +160,7 @@ export default function Navbar() {
         </div>
       </div>
 
+      {/* Mobile menu */}
       {open && (
         <div className="lg:hidden mobile-nav-open border-t border-stone-dark bg-sand px-4 sm:px-6 py-5 space-y-4">
           <form onSubmit={handleSearch} className="relative">
@@ -127,14 +174,33 @@ export default function Navbar() {
             </button>
           </form>
           <nav className="flex flex-col gap-3">
-            {navLinks.map((link) => (
+            <NavLink
+              to="/shop"
+              end
+              onClick={() => setOpen(false)}
+              className={({ isActive }) => `text-base py-1 ${isActive ? 'text-clay font-medium' : 'text-ink/80'}`}
+            >
+              {t('nav.shop')}
+            </NavLink>
+
+            {/* Mobile: categories as flat list under a label */}
+            <p className="text-xs font-medium text-ink/40 uppercase tracking-wider mt-1">
+              {lang === 'bn' ? 'ক্যাটাগরি' : 'Categories'}
+            </p>
+            {categories.map((cat) => (
               <NavLink
-                key={link.to} to={link.to} onClick={() => setOpen(false)}
-                className={({ isActive }) => `text-base py-1 ${isActive ? 'text-clay font-medium' : 'text-ink/80'}`}
+                key={cat.key}
+                to={`/shop?category=${cat.key}`}
+                onClick={() => setOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-2 text-base py-1 pl-2 ${isActive ? 'text-clay font-medium' : 'text-ink/70'}`
+                }
               >
-                {link.label}
+                {cat.icon && <span>{cat.icon}</span>}
+                {lang === 'bn' ? cat.name.bn : cat.name.en}
               </NavLink>
             ))}
+
             {user ? (
               <>
                 <Link to="/profile" onClick={() => setOpen(false)} className="text-base py-1 text-ink/80">{t('nav.profile')}</Link>

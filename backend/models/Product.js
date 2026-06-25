@@ -7,8 +7,9 @@ const productSchema = new mongoose.Schema(
   {
     categoryKey: {
       type: String,
-      enum: ['shoes', 'bags'],
       required: true,
+      // Enum is intentionally removed — valid values come from the Category collection.
+      // This lets admins add new categories without touching the schema.
     },
     name: {
       bn: { type: String, required: true },

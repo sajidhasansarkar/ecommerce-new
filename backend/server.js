@@ -9,6 +9,7 @@ import productRoutes from './routes/productRoutes.js'
 import orderRoutes from './routes/orderRoutes.js'
 import authRoutes from './routes/authRoutes.js'
 import settingsRoutes from './routes/settingsRoutes.js'
+import categoryRoutes from './routes/categoryRoutes.js'
 
 dotenv.config()
 connectDB()
@@ -51,6 +52,7 @@ app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/settings', settingsRoutes)
+app.use('/api/categories', categoryRoutes)
 
 app.get('/', (req, res) => {
   res.send('লাবণ্য API চলছে ✓')

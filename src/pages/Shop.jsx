@@ -3,15 +3,15 @@ import { useSearchParams } from 'react-router-dom'
 import { SlidersHorizontal, X } from 'lucide-react'
 import ProductCard from '../components/ProductCard.jsx'
 import { useLanguage } from '../context/LanguageContext.jsx'
+import { useCategories } from '../context/CategoryContext.jsx'
 import { api } from '../api.js'
-
-const categoryKeys = ['all', 'shoes', 'bags']
 
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams()
   const activeCategory = searchParams.get('category') || 'all'
   const searchQuery = searchParams.get('q') || ''
   const { lang, t } = useLanguage()
+  const { categories } = useCategories()
 
   const sortOptions = [
     { value: 'default', label: t('shop.sortDefault') },
@@ -54,8 +54,14 @@ export default function Shop() {
     return list
   }, [products, sort, maxPrice])
 
+  // Dynamic title: look up current category name
+  const activeCatObj = categories.find((c) => c.key === activeCategory)
   const categoryTitle =
-    activeCategory === 'all' ? t('shop.allProducts') : t(`categories.${activeCategory}`)
+    activeCategory === 'all'
+      ? t('shop.allProducts')
+      : activeCatObj
+        ? (lang === 'bn' ? activeCatObj.name.bn : activeCatObj.name.en)
+        : activeCategory
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -75,6 +81,8 @@ export default function Shop() {
             setCategory={setCategory}
             maxPrice={maxPrice}
             setMaxPrice={setMaxPrice}
+            categories={categories}
+            lang={lang}
             t={t}
           />
         </aside>
@@ -105,7 +113,7 @@ export default function Shop() {
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="animate-pulse">
                   <div className="relative aspect-[4/5] rounded-lg bg-stone mb-3 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-stone-dark/50 to-transparent" style={{animation:'shimmer 1.5s infinite', transform:'translateX(-100%)', animationTimingFunction:'linear'}} />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-stone-dark/50 to-transparent" />
                     <div className="absolute bottom-3 right-3 h-7 w-16 bg-stone-dark rounded" />
                   </div>
                   <div className="h-4 bg-stone rounded-md w-3/4 mb-2" />
@@ -115,7 +123,6 @@ export default function Shop() {
                   </div>
                 </div>
               ))}
-              <style>{"@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}.shimmer-anim{animation:shimmer 1.5s linear infinite}"}</style>
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-20">
@@ -150,6 +157,8 @@ export default function Shop() {
               }}
               maxPrice={maxPrice}
               setMaxPrice={setMaxPrice}
+              categories={categories}
+              lang={lang}
               t={t}
             />
           </div>
@@ -159,21 +168,35 @@ export default function Shop() {
   )
 }
 
-function FilterPanel({ activeCategory, setCategory, maxPrice, setMaxPrice, t }) {
+function FilterPanel({ activeCategory, setCategory, maxPrice, setMaxPrice, categories, lang, t }) {
   return (
     <div className="space-y-8">
       <div>
         <h3 className="font-medium text-sm text-ink mb-3 uppercase tracking-wide">{t('shop.category')}</h3>
         <ul className="space-y-2">
-          {categoryKeys.map((key) => (
-            <li key={key}>
+          {/* "All" option */}
+          <li>
+            <button
+              onClick={() => setCategory('all')}
+              className={`text-sm w-full text-left py-1 transition-colors ${
+                activeCategory === 'all' ? 'text-clay font-medium' : 'text-ink/70 hover:text-clay'
+              }`}
+            >
+              {lang === 'bn' ? 'সব' : 'All'}
+            </button>
+          </li>
+
+          {/* Dynamic categories from DB */}
+          {categories.map((cat) => (
+            <li key={cat.key}>
               <button
-                onClick={() => setCategory(key)}
-                className={`text-sm w-full text-left py-1 transition-colors ${
-                  activeCategory === key ? 'text-clay font-medium' : 'text-ink/70 hover:text-clay'
+                onClick={() => setCategory(cat.key)}
+                className={`flex items-center gap-1.5 text-sm w-full text-left py-1 transition-colors ${
+                  activeCategory === cat.key ? 'text-clay font-medium' : 'text-ink/70 hover:text-clay'
                 }`}
               >
-                {t(`categories.${key}`)}
+                {cat.icon && <span>{cat.icon}</span>}
+                {lang === 'bn' ? cat.name.bn : cat.name.en}
               </button>
             </li>
           ))}

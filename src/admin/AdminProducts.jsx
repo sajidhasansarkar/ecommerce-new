@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Plus, Pencil, Trash2, X, Loader2, Link as LinkIcon, Upload, Image } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext.jsx'
+import { useCategories } from '../context/CategoryContext.jsx'
 import { api } from '../api.js'
 
-const categoryKeys = ['shoes', 'bags']
+// categoryKeys removed — now loaded from CategoryContext
 
 // প্রতিটি ব্যাজের bn/en ভ্যালু — Home.jsx এর ফিল্টারের সাথে মিলিয়ে রাখা হয়েছে
 const BADGE_OPTIONS = [
@@ -37,6 +38,7 @@ function fileToDataUrl(file) {
 
 export default function AdminProducts() {
   const { t, lang } = useLanguage()
+  const { categories } = useCategories()
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -323,7 +325,7 @@ export default function AdminProducts() {
                   <label className="block text-sm font-medium text-ink mb-1.5">ক্যাটাগরি</label>
                   <select name="categoryKey" value={form.categoryKey} onChange={handleChange}
                     className="w-full bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40">
-                    {categoryKeys.map((k) => <option key={k} value={k}>{t(`categories.${k}`)}</option>)}
+                    {categories.map((c) => <option key={c.key} value={c.key}>{lang === 'bn' ? c.name.bn : c.name.en}</option>)}
                   </select>
                 </div>
                 <div>
