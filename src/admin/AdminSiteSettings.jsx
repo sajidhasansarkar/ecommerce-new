@@ -20,6 +20,53 @@ function fileToDataUrl(file) {
   })
 }
 
+// ছবি বড় হলে (সাইজ বা ডাইমেনশনে) ব্রাউজারেই resize+compress করে ছোট base64 বানায়,
+// যাতে সার্ভারে রিকোয়েস্ট পাঠানোর সময় "Unexpected token '<'..." (413 Payload Too Large) এরর না আসে।
+const MAX_DIMENSION = 1600       // px — এর বেশি বড় ছবি স্কেল ডাউন হবে
+const TARGET_MAX_BYTES = 700_000 // ~700KB এর মধ্যে রাখার চেষ্টা করবে
+
+function loadImage(dataUrl) {
+  return new Promise((res, rej) => {
+    const img = new window.Image()
+    img.onload = () => res(img)
+    img.onerror = rej
+    img.src = dataUrl
+  })
+}
+
+async function compressImageFile(file) {
+  const rawDataUrl = await fileToDataUrl(file)
+
+  // GIF (animation থাকতে পারে) compress না করে যেমন আছে তেমনই রাখি
+  if (file.type === 'image/gif') return rawDataUrl
+
+  const img = await loadImage(rawDataUrl)
+  let { width, height } = img
+
+  if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+    const scale = MAX_DIMENSION / Math.max(width, height)
+    width = Math.round(width * scale)
+    height = Math.round(height * scale)
+  }
+
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')
+  ctx.drawImage(img, 0, 0, width, height)
+
+  // কোয়ালিটি ধাপে ধাপে কমিয়ে টার্গেট সাইজের মধ্যে আনার চেষ্টা
+  let quality = 0.85
+  let out = canvas.toDataURL('image/jpeg', quality)
+  while (out.length * 0.75 > TARGET_MAX_BYTES && quality > 0.4) {
+    quality -= 0.1
+    out = canvas.toDataURL('image/jpeg', quality)
+  }
+
+  // যদি কম্প্রেস করা ছবি মূল ছবির চেয়ে বড় হয়ে যায় (rare/small images), মূলটাই রাখি
+  return out.length < rawDataUrl.length ? out : rawDataUrl
+}
+
 /* ——— Accordion Section ——— */
 function AccordionSection({ icon: Icon, title, desc, badge, children, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen)
@@ -64,13 +111,27 @@ function ImagePicker({ label, value, onChange, aspect = 'aspect-video' }) {
   const [tab, setTab] = useState('url')
   const [urlInput, setUrlInput] = useState(value || '')
   const [dragOver, setDragOver] = useState(false)
+  const [processing, setProcessing] = useState(false)
+  const [fileError, setFileError] = useState('')
   const fileRef = useRef(null)
 
   useEffect(() => { setUrlInput(value || '') }, [value])
 
   async function processFile(file) {
-    if (!file.type.startsWith('image/')) return
-    onChange(await fileToDataUrl(file))
+    if (!file.type.startsWith('image/')) {
+      setFileError('এটি একটি ছবি ফাইল না — অনুগ্রহ করে JPG/PNG/WebP/GIF ফাইল দিন')
+      return
+    }
+    setFileError('')
+    setProcessing(true)
+    try {
+      const dataUrl = await compressImageFile(file)
+      onChange(dataUrl)
+    } catch (e) {
+      setFileError('ছবি প্রসেস করতে সমস্যা হয়েছে, আবার চেষ্টা করুন')
+    } finally {
+      setProcessing(false)
+    }
   }
 
   const handleDrop = useCallback((e) => {
@@ -107,20 +168,28 @@ function ImagePicker({ label, value, onChange, aspect = 'aspect-video' }) {
       )}
       {tab === 'upload' && (
         <>
-          <input ref={fileRef} type="file" accept="image/*" className="hidden"
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" disabled={processing}
             onChange={async e => { if (e.target.files[0]) await processFile(e.target.files[0]); e.target.value = '' }} />
-          <button type="button" onClick={() => fileRef.current?.click()}
-            className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-stone-dark rounded-lg py-5 text-sm text-ink/60 hover:border-clay hover:text-clay transition-colors">
-            <Upload size={18} /> {t('admin.chooseImage')}
+          <button type="button" onClick={() => fileRef.current?.click()} disabled={processing}
+            className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-stone-dark rounded-lg py-5 text-sm text-ink/60 hover:border-clay hover:text-clay transition-colors disabled:opacity-60">
+            {processing ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+            {processing ? 'ছবি প্রসেস হচ্ছে…' : t('admin.chooseImage')}
           </button>
         </>
       )}
       {tab === 'drag' && (
         <div onDrop={handleDrop} onDragOver={e => { e.preventDefault(); setDragOver(true) }} onDragLeave={() => setDragOver(false)}
           className={`w-full border-2 border-dashed rounded-lg py-5 flex flex-col items-center justify-center gap-2 transition-colors ${dragOver ? 'border-clay bg-clay/5 text-clay' : 'border-stone-dark text-ink/50'}`}>
-          <ImageIcon size={30} className={dragOver ? 'text-clay' : 'text-ink/20'} />
-          <p className="text-sm font-medium">{dragOver ? t('admin.dropHere') : t('admin.dragHere')}</p>
+          {processing
+            ? <Loader2 size={30} className="animate-spin text-clay" />
+            : <ImageIcon size={30} className={dragOver ? 'text-clay' : 'text-ink/20'} />}
+          <p className="text-sm font-medium">
+            {processing ? 'ছবি প্রসেস হচ্ছে…' : dragOver ? t('admin.dropHere') : t('admin.dragHere')}
+          </p>
         </div>
+      )}
+      {fileError && (
+        <p className="text-xs text-clay flex items-center gap-1.5">⚠️ {fileError}</p>
       )}
 
       {value ? (

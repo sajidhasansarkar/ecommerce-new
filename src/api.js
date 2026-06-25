@@ -14,7 +14,21 @@ async function request(method, path, body) {
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: body ? JSON.stringify(body) : undefined,
   })
-  const data = await res.json()
+
+  // রেসপন্স টেক্সট আগে পড়ি, কারণ সার্ভার/হোস্টিং প্ল্যাটফর্ম কখনো কখনো
+  // এরর হলে JSON না দিয়ে HTML পেজ (যেমন "413 Payload Too Large") রিটার্ন করে।
+  // সরাসরি res.json() কল করলে তখন "Unexpected token '<'..." এই ক্রিপ্টিক এরর আসে।
+  const raw = await res.text()
+  let data
+  try {
+    data = raw ? JSON.parse(raw) : {}
+  } catch {
+    if (res.status === 413 || raw.trim().startsWith('<')) {
+      throw new Error('ছবি/ডাটার সাইজ অনেক বড় — সার্ভার এটা গ্রহণ করতে পারছে না। ছবির সাইজ ছোট করে আবার চেষ্টা করুন।')
+    }
+    throw new Error(`সার্ভার থেকে অপ্রত্যাশিত উত্তর এসেছে (status ${res.status})। কিছুক্ষণ পর আবার চেষ্টা করুন।`)
+  }
+
   if (!res.ok) throw new Error(data.message || 'কিছু একটা ভুল হয়েছে')
   return data
 }
