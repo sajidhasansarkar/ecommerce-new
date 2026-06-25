@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { api } from '../api.js'
 import { useLanguage } from '../context/LanguageContext.jsx'
+import { useSiteSettings } from '../context/SiteSettingsContext.jsx'
 
 const DEFAULT_CAT_IMAGES = {
   shoes: 'https://images.unsplash.com/photo-1551489186-cf8726f514f8?w=700&q=80',
@@ -251,6 +252,7 @@ function LivePreview({ heroSlider, shoesImage, bagsImage, promoBanner, marqueeIt
 /* ——— Main ——— */
 export default function AdminSiteSettings() {
   const { t } = useLanguage()
+  const { setLogoImage: setContextLogoImage } = useSiteSettings()
   const [loading, setLoading]   = useState(true)
   const [saving, setSaving]     = useState(false)
   const [success, setSuccess]   = useState(false)
@@ -298,6 +300,7 @@ export default function AdminSiteSettings() {
         logoImage,
       })
       setSuccess(true)
+      setContextLogoImage(logoImage)
       setTimeout(() => setSuccess(false), 4000)
     } catch (e) { setError(e.message) }
     finally { setSaving(false) }

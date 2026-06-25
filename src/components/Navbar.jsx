@@ -125,7 +125,7 @@ export default function Navbar() {
 
       <header className="sticky top-0 z-50 bg-sand/95 backdrop-blur-sm border-b border-stone-dark">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative flex items-center justify-between h-16 lg:h-20">
+          <div className="flex items-center justify-between h-16 lg:h-20 gap-4">
 
             {/* Brand */}
             <Link to="/" className="flex items-center gap-2 group shrink-0">
@@ -145,8 +145,8 @@ export default function Navbar() {
               )}
             </Link>
 
-            {/* Desktop nav — absolutely centered in header */}
-            <nav className="hidden lg:flex items-center gap-6 absolute left-1/2 -translate-x-1/2">
+            {/* Desktop nav — centered naturally between brand and right icons */}
+            <nav className="hidden lg:flex items-center gap-5 flex-1 justify-center">
 
               <NavLink to="/shop" end className={({ isActive }) =>
                 `nav-pill text-ink/80 hover:text-clay ${isActive ? 'active' : ''}`
@@ -279,12 +279,12 @@ export default function Navbar() {
             </nav>
 
             {/* Desktop right */}
-            <div className="hidden lg:flex items-center gap-4 shrink-0">
+            <div className="hidden lg:flex items-center gap-3 shrink-0">
               <form onSubmit={handleSearch} className="relative">
                 <input
                   type="text" value={query} onChange={(e) => setQuery(e.target.value)}
                   placeholder={t('nav.search')}
-                  className="w-40 bg-stone/60 border border-stone-dark rounded-full px-4 py-1.5 text-sm pr-9 focus:outline-none focus:ring-2 focus:ring-clay/40 focus:border-clay placeholder:text-ink/40"
+                  className="w-36 bg-stone/60 border border-stone-dark rounded-full px-4 py-1.5 text-sm pr-9 focus:outline-none focus:ring-2 focus:ring-clay/40 focus:border-clay placeholder:text-ink/40"
                 />
                 <button type="submit" className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/50 hover:text-clay">
                   <Search size={16} />
