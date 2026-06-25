@@ -7,11 +7,8 @@ import {
 import { api } from '../api.js'
 import { useLanguage } from '../context/LanguageContext.jsx'
 import { useSiteSettings } from '../context/SiteSettingsContext.jsx'
+import { useCategories } from '../context/CategoryContext.jsx'
 
-const DEFAULT_CAT_IMAGES = {
-  shoes: 'https://images.unsplash.com/photo-1551489186-cf8726f514f8?w=700&q=80',
-  bags:  'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=700&q=80',
-}
 const DEFAULT_MARQUEE = ['নতুন কালেকশন এসেছে', 'বিশেষ ছাড় চলছে', 'ফ্রি শিপিং ৳৫০০+ অর্ডারে', 'লিমিটেড এডিশন']
 
 function fileToDataUrl(file) {
@@ -145,7 +142,7 @@ function ImagePicker({ label, value, onChange, aspect = 'aspect-video' }) {
 }
 
 /* ——— Live Preview ——— */
-function LivePreview({ heroSlider, shoesImage, bagsImage, promoBanner, marqueeItems }) {
+function LivePreview({ heroSlider, categoryImages, promoBanner, marqueeItems }) {
   const { t } = useLanguage()
   const [slide, setSlide] = useState(0)
   useEffect(() => {
@@ -210,14 +207,14 @@ function LivePreview({ heroSlider, shoesImage, bagsImage, promoBanner, marqueeIt
 
       {/* categories */}
       <div className="p-3 grid grid-cols-2 gap-2">
-        {[{ img: shoesImage, label: 'জুতা' }, { img: bagsImage, label: 'ব্যাগ' }].map(({ img, label }, i) => (
-          <div key={i} className="relative aspect-video rounded-md overflow-hidden bg-stone-dark">
-            {img
-              ? <img src={img} className="w-full h-full object-cover" alt="" />
+        {(categoryImages.length > 0 ? categoryImages.slice(0, 4) : [{ key: 'cat1', image: '' }, { key: 'cat2', image: '' }]).map(({ key, image }, i) => (
+          <div key={key} className="relative aspect-video rounded-md overflow-hidden bg-stone-dark">
+            {image
+              ? <img src={image} className="w-full h-full object-cover" alt="" />
               : <div className="w-full h-full flex items-center justify-center"><ImageIcon size={12} className="text-ink/20" /></div>
             }
             <div className="absolute inset-0 bg-gradient-to-t from-ink/50 to-transparent" />
-            <span className="absolute bottom-1 left-1.5 text-sand font-bold" style={{fontSize:8}}>{label}</span>
+            <span className="absolute bottom-1 left-1.5 text-sand font-bold" style={{fontSize:8}}>{key}</span>
           </div>
         ))}
       </div>
@@ -253,28 +250,36 @@ function LivePreview({ heroSlider, shoesImage, bagsImage, promoBanner, marqueeIt
 export default function AdminSiteSettings() {
   const { t } = useLanguage()
   const { setLogoImage: setContextLogoImage } = useSiteSettings()
+  const { categories } = useCategories()
   const [loading, setLoading]   = useState(true)
   const [saving, setSaving]     = useState(false)
   const [success, setSuccess]   = useState(false)
   const [error, setError]       = useState('')
   const [showPreview, setShowPreview] = useState(true)
 
-  const [heroImage,    setHeroImage]    = useState('')
-  const [shoesImage,   setShoesImage]   = useState(DEFAULT_CAT_IMAGES.shoes)
-  const [bagsImage,    setBagsImage]    = useState(DEFAULT_CAT_IMAGES.bags)
-  const [heroSlider,   setHeroSlider]   = useState([])
-  const [promoBanner,  setPromoBanner]  = useState({ image: '', title: '', subtitle: '', link: '/shop' })
-  const [marqueeItems, setMarqueeItems] = useState(DEFAULT_MARQUEE)
-  const [newMarquee,   setNewMarquee]   = useState('')
-  const [lightImage,   setLightImage]   = useState('')  // kept for backward compat, unused
-  const [logoImage,    setLogoImage]    = useState('')
+  const [heroImage,     setHeroImage]     = useState('')
+  const [categoryImages, setCategoryImages] = useState([]) // [{key, image}]
+  const [heroSlider,    setHeroSlider]    = useState([])
+  const [promoBanner,   setPromoBanner]   = useState({ image: '', title: '', subtitle: '', link: '/shop' })
+  const [marqueeItems,  setMarqueeItems]  = useState(DEFAULT_MARQUEE)
+  const [newMarquee,    setNewMarquee]    = useState('')
+  const [lightImage,    setLightImage]    = useState('')
+  const [logoImage,     setLogoImage]     = useState('')
 
   useEffect(() => {
     api.settings.get()
       .then(s => {
         setHeroImage(s.heroImage || '')
-        setShoesImage(s.categoryImages?.shoes || DEFAULT_CAT_IMAGES.shoes)
-        setBagsImage(s.categoryImages?.bags   || DEFAULT_CAT_IMAGES.bags)
+        // categoryImages আসতে পারে [{key,image}] array অথবা পুরনো {shoes,bags} object
+        if (Array.isArray(s.categoryImages)) {
+          setCategoryImages(s.categoryImages)
+        } else if (s.categoryImages && typeof s.categoryImages === 'object') {
+          // পুরনো format migrate করি
+          const migrated = Object.entries(s.categoryImages)
+            .filter(([, img]) => img)
+            .map(([key, image]) => ({ key, image }))
+          setCategoryImages(migrated)
+        }
         setHeroSlider(s.heroSlider || [])
         setPromoBanner(s.promoBanner || { image: '', title: '', subtitle: '', link: '/shop' })
         setMarqueeItems(s.marqueeItems || DEFAULT_MARQUEE)
@@ -292,7 +297,7 @@ export default function AdminSiteSettings() {
     try {
       await api.settings.update({
         heroImage,
-        categoryImages: { shoes: shoesImage, bags: bagsImage },
+        categoryImages,
         heroSlider,
         promoBanner,
         marqueeItems,
@@ -426,11 +431,47 @@ export default function AdminSiteSettings() {
             icon={LayoutGrid}
             title={t('admin.categoryImages')}
             desc={t('admin.categoryImagesDesc')}
+            badge={categoryImages.filter(c => c.image).length}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <ImagePicker label={t('admin.shoesCategory')} value={shoesImage} onChange={setShoesImage} />
-              <ImagePicker label={t('admin.bagsCategory')}  value={bagsImage}  onChange={setBagsImage}  />
-            </div>
+            {categories.length === 0 ? (
+              <div className="py-4 text-center text-sm text-ink/40 border border-dashed border-stone-dark rounded-lg">
+                {lang === 'bn' ? 'আগে ক্যাটাগরি যোগ করুন' : 'Add categories first from the Categories section'}
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {categories.map((cat) => {
+                  const entry = categoryImages.find(c => c.key === cat.key)
+                  const imgVal = entry?.image || ''
+                  function setCatImage(val) {
+                    setCategoryImages(prev => {
+                      const exists = prev.find(c => c.key === cat.key)
+                      if (exists) return prev.map(c => c.key === cat.key ? { ...c, image: val } : c)
+                      return [...prev, { key: cat.key, image: val }]
+                    })
+                  }
+                  return (
+                    <div key={cat.key} className="border border-stone-dark rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        {cat.icon && <span className="text-lg">{cat.icon}</span>}
+                        <span className="font-medium text-sm text-ink">
+                          {lang === 'bn' ? cat.name.bn : cat.name.en}
+                        </span>
+                        <span className="text-xs text-ink/30 font-mono ml-1">({cat.key})</span>
+                        {imgVal && (
+                          <span className="ml-auto text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ ছবি আছে</span>
+                        )}
+                      </div>
+                      <ImagePicker
+                        label=""
+                        value={imgVal}
+                        onChange={setCatImage}
+                        aspect="aspect-video"
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </AccordionSection>
 
           {/* 4. Promo Banner */}
@@ -501,8 +542,7 @@ export default function AdminSiteSettings() {
             <p className="text-xs font-semibold text-ink/40 uppercase tracking-widest mb-3">{t('admin.livePreview')}</p>
             <LivePreview
               heroSlider={sliderForPreview}
-              shoesImage={shoesImage}
-              bagsImage={bagsImage}
+              categoryImages={categoryImages}
               promoBanner={promoBanner}
               marqueeItems={marqueeItems}
             />

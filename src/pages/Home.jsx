@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, Truck, RotateCcw, ShieldCheck, ChevronLeft, ChevronRight } from 'lucide-react'
 import ProductCard from '../components/ProductCard.jsx'
 import { useLanguage } from '../context/LanguageContext.jsx'
+import { useCategories } from '../context/CategoryContext.jsx'
 import { api } from '../api.js'
 
 const HOME_SECTIONS = [
@@ -226,6 +227,7 @@ function PromoBanner({ promo }) {
 /* ——— Main Component ——— */
 export default function Home() {
   const { lang, t } = useLanguage()
+  const { categories } = useCategories()
   const [products, setProducts]   = useState([])
   const [settings, setSettings]   = useState(null)
   const [loadingProducts, setLoadingProducts] = useState(true)
@@ -249,8 +251,21 @@ export default function Home() {
     return fallback ? [fallback] : []
   })()
 
-  const shoesImage   = settings?.categoryImages?.shoes || 'https://images.unsplash.com/photo-1551489186-cf8726f514f8?w=700&q=80'
-  const bagsImage    = settings?.categoryImages?.bags  || 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=700&q=80'
+  // categoryImages: [{key, image}] array থেকে map বানাই
+  const catImageMap = {}
+  if (Array.isArray(settings?.categoryImages)) {
+    settings.categoryImages.forEach(({ key, image }) => { if (image) catImageMap[key] = image })
+  }
+
+  // image আছে এমন categories দেখাব
+  const visibleCategories = categories
+    .filter(cat => cat.isActive !== false && catImageMap[cat.key])
+    .map(cat => ({
+      key: cat.key,
+      to: `/shop?category=${cat.key}`,
+      src: catImageMap[cat.key],
+      label: lang === 'bn' ? cat.name.bn : cat.name.en,
+    }))
   const marqueeItems = settings?.marqueeItems || ['নতুন কালেকশন এসেছে', 'বিশেষ ছাড় চলছে', 'ফ্রি শিপিং ৳৫০০+ অর্ডারে', 'লিমিটেড এডিশন']
 
   const isLoading = loadingProducts || loadingSettings
@@ -327,15 +342,13 @@ export default function Home() {
       </section>
 
       {/* ——— Categories ——— */}
+      {visibleCategories.length > 0 && (
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
         <h2 className="font-display text-2xl lg:text-3xl text-ink mb-6 reveal animate-fade-up">{t('home.categoriesTitle')}</h2>
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          {[
-            { to: '/shop?category=shoes', src: shoesImage, label: t('nav.shoes'), delay: 'delay-100' },
-            { to: '/shop?category=bags',  src: bagsImage,  label: t('nav.bags'),  delay: 'delay-200' },
-          ].map(({ to, src, label, delay }) => (
-            <Link key={to} to={to}
-              className={`group relative aspect-[4/3] sm:aspect-[16/10] rounded-lg overflow-hidden bg-stone reveal animate-scale-in ${delay}`}
+        <div className={`grid gap-3 sm:gap-4 ${visibleCategories.length === 1 ? 'grid-cols-1' : visibleCategories.length === 2 ? 'grid-cols-2' : visibleCategories.length === 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4'}`}>
+          {visibleCategories.map(({ key, to, src, label }, i) => (
+            <Link key={key} to={to}
+              className={`group relative aspect-[4/3] sm:aspect-[16/10] rounded-lg overflow-hidden bg-stone reveal animate-scale-in delay-${(i % 4 + 1) * 100}`}
             >
               <img src={src} alt={label}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -346,6 +359,7 @@ export default function Home() {
           ))}
         </div>
       </section>
+      )}
 
       {/* ——— Promo Banner ——— */}
       <PromoBanner promo={settings?.promoBanner} />

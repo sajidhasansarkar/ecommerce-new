@@ -22,13 +22,16 @@ export async function updateSettings(req, res) {
     if (typeof heroImage   === 'string') s.heroImage   = heroImage
     if (typeof lightImage  === 'string') s.lightImage  = lightImage
     if (typeof logoImage   === 'string') s.logoImage   = logoImage
-    if (categoryImages) {
-      if (categoryImages.shoes !== undefined) s.categoryImages.shoes = categoryImages.shoes
-      if (categoryImages.bags  !== undefined) s.categoryImages.bags  = categoryImages.bags
-    }
+    // categoryImages এখন [{key, image}] array
+    if (Array.isArray(categoryImages))   s.categoryImages = categoryImages
     if (Array.isArray(heroSlider))   s.heroSlider   = heroSlider
-    if (promoBanner)                 s.promoBanner  = { ...s.promoBanner, ...promoBanner }
     if (Array.isArray(marqueeItems)) s.marqueeItems = marqueeItems
+    if (promoBanner && typeof promoBanner === 'object') {
+      if (typeof promoBanner.image    === 'string') s.promoBanner.image    = promoBanner.image
+      if (typeof promoBanner.title    === 'string') s.promoBanner.title    = promoBanner.title
+      if (typeof promoBanner.subtitle === 'string') s.promoBanner.subtitle = promoBanner.subtitle
+      if (typeof promoBanner.link     === 'string') s.promoBanner.link     = promoBanner.link
+    }
 
     await s.save()
     res.json(s)
