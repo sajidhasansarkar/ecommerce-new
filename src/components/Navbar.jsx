@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { ShoppingBag, Search, Menu, X, Languages, LogOut, ChevronDown, Sparkles, TrendingUp, Tag, Info } from 'lucide-react'
+import { ShoppingBag, Search, Menu, X, Languages, LogOut, ChevronDown, ChevronRight, Sparkles, TrendingUp, Tag, Info } from 'lucide-react'
 import { useCart } from '../context/CartContext.jsx'
 import { useLanguage } from '../context/LanguageContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -10,18 +10,23 @@ import UserMenu from './UserMenu.jsx'
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const [catOpen, setCatOpen] = useState(false)
+  const [mobileCatOpen, setMobileCatOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [hoveredCat, setHoveredCat] = useState(null)
   const { itemCount } = useCart()
   const { lang, toggleLang, t } = useLanguage()
   const { user, logout } = useAuth()
   const { categories } = useCategories()
   const navigate = useNavigate()
-  const dropdownRef = useRef(null)
+  const catMenuRef = useRef(null)
+  const catLeaveTimer = useRef(null)
 
+  // Close category dropdown on outside click (fallback)
   useEffect(() => {
     function handleClick(e) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      if (catMenuRef.current && !catMenuRef.current.contains(e.target)) {
         setCatOpen(false)
+        setHoveredCat(null)
       }
     }
     document.addEventListener('mousedown', handleClick)
@@ -43,13 +48,17 @@ export default function Navbar() {
     }
   }
 
-  const staticLinks = [
-    { to: '/shop', label: t('nav.shop'), end: true },
-    { to: '/shop?badge=new', label: t('nav.newArrivals'), icon: Sparkles },
-    { to: '/shop?badge=bestseller', label: t('nav.bestSellers'), icon: TrendingUp },
-    { to: '/shop?badge=sale', label: t('nav.deals'), icon: Tag },
-    { to: '/about', label: t('nav.about'), icon: Info },
-  ]
+  // Hover helpers with a small delay to prevent flicker
+  function onCatEnter() {
+    clearTimeout(catLeaveTimer.current)
+    setCatOpen(true)
+  }
+  function onCatLeave() {
+    catLeaveTimer.current = setTimeout(() => {
+      setCatOpen(false)
+      setHoveredCat(null)
+    }, 120)
+  }
 
   return (
     <>
@@ -79,16 +88,37 @@ export default function Navbar() {
         .nav-pill.active { color: #C75D3C; font-weight: 500; }
 
         .cat-dropdown {
-          animation: dropIn 0.18s cubic-bezier(0.22,1,0.36,1) both;
+          animation: dropIn 0.16s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        .subcat-flyout {
+          animation: flyIn 0.14s cubic-bezier(0.22,1,0.36,1) both;
         }
         @keyframes dropIn {
           from { opacity: 0; transform: translateY(-6px); }
           to   { opacity: 1; transform: translateY(0); }
         }
+        @keyframes flyIn {
+          from { opacity: 0; transform: translateX(-6px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
 
         .nav-badge-new  { background: #d4e8c2; color: #3a6b1e; }
         .nav-badge-hot  { background: #fde8d0; color: #b94a1a; }
         .nav-badge-sale { background: #fde8d0; color: #b94a1a; }
+
+        .cat-row {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 6px;
+          padding: 10px 16px;
+          font-size: 0.875rem;
+          transition: background 0.15s, color 0.15s;
+          cursor: pointer;
+        }
+        .cat-row:hover { background: rgba(199,93,60,0.07); color: #C75D3C; }
+        .cat-row.hovered { background: rgba(199,93,60,0.07); color: #C75D3C; }
       `}</style>
 
       <header className="sticky top-0 z-50 bg-sand/95 backdrop-blur-sm border-b border-stone-dark">
@@ -105,14 +135,13 @@ export default function Navbar() {
 
             {/* Desktop nav */}
             <nav className="hidden lg:flex items-center gap-7 mx-6">
-              {/* Shop */}
+
               <NavLink to="/shop" end className={({ isActive }) =>
                 `nav-pill text-ink/80 hover:text-clay ${isActive ? 'active' : ''}`
               }>
                 {t('nav.shop')}
               </NavLink>
 
-              {/* New Arrivals */}
               <NavLink to="/shop?badge=new" className={({ isActive }) =>
                 `nav-pill flex items-center gap-1 text-ink/80 hover:text-clay ${isActive ? 'active' : ''}`
               }>
@@ -121,7 +150,6 @@ export default function Navbar() {
                 <span className="nav-badge-new text-[9px] font-semibold px-1.5 py-0.5 rounded-full ml-0.5">NEW</span>
               </NavLink>
 
-              {/* Best Sellers */}
               <NavLink to="/shop?badge=bestseller" className={({ isActive }) =>
                 `nav-pill flex items-center gap-1 text-ink/80 hover:text-clay ${isActive ? 'active' : ''}`
               }>
@@ -129,7 +157,6 @@ export default function Navbar() {
                 {t('nav.bestSellers')}
               </NavLink>
 
-              {/* Deals */}
               <NavLink to="/shop?badge=sale" className={({ isActive }) =>
                 `nav-pill flex items-center gap-1 text-ink/80 hover:text-clay ${isActive ? 'active' : ''}`
               }>
@@ -138,10 +165,14 @@ export default function Navbar() {
                 <span className="nav-badge-sale text-[9px] font-semibold px-1.5 py-0.5 rounded-full ml-0.5">🔥</span>
               </NavLink>
 
-              {/* Categories dropdown */}
-              <div className="relative" ref={dropdownRef}>
+              {/* ── Categories dropdown — opens on HOVER ── */}
+              <div
+                className="relative"
+                ref={catMenuRef}
+                onMouseEnter={onCatEnter}
+                onMouseLeave={onCatLeave}
+              >
                 <button
-                  onClick={() => setCatOpen((v) => !v)}
                   className={`nav-pill flex items-center gap-1 text-ink/80 hover:text-clay ${catOpen ? 'active' : ''}`}
                 >
                   {lang === 'bn' ? 'ক্যাটাগরি' : 'Categories'}
@@ -149,32 +180,85 @@ export default function Navbar() {
                 </button>
 
                 {catOpen && (
-                  <div className="cat-dropdown absolute top-full left-0 mt-3 w-48 bg-sand border border-stone-dark rounded-xl shadow-lg py-2 z-50">
-                    {categories.map((cat) => (
-                      <NavLink
-                        key={cat.key}
-                        to={`/shop?category=${cat.key}`}
-                        onClick={() => setCatOpen(false)}
-                        className={({ isActive }) =>
-                          `flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors hover:bg-stone hover:text-clay ${
-                            isActive ? 'text-clay font-medium bg-stone/50' : 'text-ink/80'
-                          }`
-                        }
-                      >
-                        {cat.icon && <span className="text-base">{cat.icon}</span>}
-                        {lang === 'bn' ? cat.name.bn : cat.name.en}
-                      </NavLink>
-                    ))}
+                  <div className="cat-dropdown absolute top-full left-0 mt-2 w-52 bg-sand border border-stone-dark rounded-xl shadow-xl py-1.5 z-50">
                     {categories.length === 0 && (
-                      <p className="px-4 py-2 text-sm text-ink/30">
+                      <p className="px-4 py-2.5 text-sm text-ink/30">
                         {lang === 'bn' ? 'কোনো ক্যাটাগরি নেই' : 'No categories'}
                       </p>
                     )}
+
+                    {categories.map((cat) => {
+                      const activeSubs = (cat.subcategories || []).filter(s => s.isActive !== false)
+                      const hasSubcats = activeSubs.length > 0
+                      const isHovered = hoveredCat === cat.key
+
+                      return (
+                        <div
+                          key={cat.key}
+                          className="relative"
+                          onMouseEnter={() => setHoveredCat(cat.key)}
+                          onMouseLeave={() => setHoveredCat(null)}
+                        >
+                          {/* Category row */}
+                          <div
+                            className={`cat-row text-ink/80 ${isHovered ? 'hovered' : ''}`}
+                            onClick={() => {
+                              navigate(`/shop?category=${cat.key}`)
+                              setCatOpen(false)
+                              setHoveredCat(null)
+                            }}
+                          >
+                            <span className="flex items-center gap-2.5">
+                              {cat.icon && <span className="text-base leading-none">{cat.icon}</span>}
+                              <span>{lang === 'bn' ? cat.name.bn : cat.name.en}</span>
+                            </span>
+                            {hasSubcats && (
+                              <ChevronRight size={13} className="shrink-0 opacity-50" />
+                            )}
+                          </div>
+
+                          {/* Subcategory flyout — appears to the right on hover */}
+                          {hasSubcats && isHovered && (
+                            <div className="subcat-flyout absolute left-full top-0 ml-1 w-48 bg-sand border border-stone-dark rounded-xl shadow-xl py-1.5 z-50">
+                              {/* "All X" link at top */}
+                              <div
+                                className="cat-row text-ink/60 text-xs font-semibold uppercase tracking-wider border-b border-stone-dark/40 mb-1"
+                                onClick={() => {
+                                  navigate(`/shop?category=${cat.key}`)
+                                  setCatOpen(false)
+                                  setHoveredCat(null)
+                                }}
+                              >
+                                {lang === 'bn'
+                                  ? `সব ${cat.name.bn}`
+                                  : `All ${cat.name.en}`}
+                              </div>
+
+                              {activeSubs.map((sub) => (
+                                <div
+                                  key={sub.key}
+                                  className="cat-row text-ink/80"
+                                  onClick={() => {
+                                    navigate(`/shop?category=${cat.key}&subcategory=${sub.key}`)
+                                    setCatOpen(false)
+                                    setHoveredCat(null)
+                                  }}
+                                >
+                                  <span className="flex items-center gap-2.5">
+                                    {sub.icon && <span className="text-base leading-none">{sub.icon}</span>}
+                                    <span>{lang === 'bn' ? sub.name.bn : sub.name.en}</span>
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </div>
 
-              {/* About */}
               <NavLink to="/about" className={({ isActive }) =>
                 `nav-pill text-ink/80 hover:text-clay ${isActive ? 'active' : ''}`
               }>
@@ -265,19 +349,50 @@ export default function Navbar() {
                 <Tag size={15} className="text-clay" /> {t('nav.deals')} 🔥
               </NavLink>
 
-              {/* Mobile categories */}
-              <p className="text-[10px] font-semibold text-ink/30 uppercase tracking-widest pt-4 pb-2">
-                {lang === 'bn' ? 'ক্যাটাগরি' : 'Categories'}
-              </p>
-              {categories.map((cat) => (
-                <NavLink key={cat.key} to={`/shop?category=${cat.key}`} onClick={() => setOpen(false)}
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 py-2.5 border-b border-stone-dark/30 text-sm pl-2 ${isActive ? 'text-clay font-medium' : 'text-ink/70'}`
-                  }>
-                  {cat.icon && <span>{cat.icon}</span>}
-                  {lang === 'bn' ? cat.name.bn : cat.name.en}
-                </NavLink>
-              ))}
+              {/* Mobile categories — tap to expand */}
+              <button
+                onClick={() => setMobileCatOpen(v => !v)}
+                className="flex items-center justify-between py-3 border-b border-stone-dark/40 text-base text-ink/80 w-full"
+              >
+                <span>{lang === 'bn' ? 'ক্যাটাগরি' : 'Categories'}</span>
+                <ChevronDown size={16} className={`transition-transform duration-200 ${mobileCatOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {mobileCatOpen && (
+                <div className="pl-2 pb-1">
+                  {categories.map((cat) => {
+                    const activeSubs = (cat.subcategories || []).filter(s => s.isActive !== false)
+                    return (
+                      <div key={cat.key}>
+                        <NavLink
+                          to={`/shop?category=${cat.key}`}
+                          onClick={() => setOpen(false)}
+                          className={({ isActive }) =>
+                            `flex items-center gap-2 py-2.5 border-b border-stone-dark/30 text-sm pl-1 ${isActive ? 'text-clay font-medium' : 'text-ink/70'}`
+                          }
+                        >
+                          {cat.icon && <span>{cat.icon}</span>}
+                          {lang === 'bn' ? cat.name.bn : cat.name.en}
+                        </NavLink>
+                        {/* Mobile subcategories */}
+                        {activeSubs.map((sub) => (
+                          <NavLink
+                            key={sub.key}
+                            to={`/shop?category=${cat.key}&subcategory=${sub.key}`}
+                            onClick={() => setOpen(false)}
+                            className={({ isActive }) =>
+                              `flex items-center gap-2 py-2 border-b border-stone-dark/20 text-xs pl-6 ${isActive ? 'text-clay font-medium' : 'text-ink/50'}`
+                            }
+                          >
+                            {sub.icon && <span>{sub.icon}</span>}
+                            {lang === 'bn' ? sub.name.bn : sub.name.en}
+                          </NavLink>
+                        ))}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
 
               <NavLink to="/about" onClick={() => setOpen(false)}
                 className={({ isActive }) => `flex items-center gap-2 py-3 border-b border-stone-dark/40 text-base mt-1 ${isActive ? 'text-clay font-medium' : 'text-ink/80'}`}>

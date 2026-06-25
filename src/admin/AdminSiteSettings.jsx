@@ -119,7 +119,7 @@ function ImagePicker({ label, value, onChange, aspect = 'aspect-video' }) {
       )}
       {tab === 'drag' && (
         <div onDrop={handleDrop} onDragOver={e => { e.preventDefault(); setDragOver(true) }} onDragLeave={() => setDragOver(false)}
-          className={`w-full border-2 border-dashed rounded-lg py-10 flex flex-col items-center justify-center gap-2 transition-colors ${dragOver ? 'border-clay bg-clay/5 text-clay' : 'border-stone-dark text-ink/50'}`}>
+          className={`w-full border-2 border-dashed rounded-lg py-5 flex flex-col items-center justify-center gap-2 transition-colors ${dragOver ? 'border-clay bg-clay/5 text-clay' : 'border-stone-dark text-ink/50'}`}>
           <ImageIcon size={30} className={dragOver ? 'text-clay' : 'text-ink/20'} />
           <p className="text-sm font-medium">{dragOver ? t('admin.dropHere') : t('admin.dragHere')}</p>
         </div>
@@ -264,6 +264,7 @@ export default function AdminSiteSettings() {
   const [promoBanner,  setPromoBanner]  = useState({ image: '', title: '', subtitle: '', link: '/shop' })
   const [marqueeItems, setMarqueeItems] = useState(DEFAULT_MARQUEE)
   const [newMarquee,   setNewMarquee]   = useState('')
+  const [lightImage,   setLightImage]   = useState('')
 
   useEffect(() => {
     api.settings.get()
@@ -274,6 +275,7 @@ export default function AdminSiteSettings() {
         setHeroSlider(s.heroSlider || [])
         setPromoBanner(s.promoBanner || { image: '', title: '', subtitle: '', link: '/shop' })
         setMarqueeItems(s.marqueeItems || DEFAULT_MARQUEE)
+        setLightImage(s.lightImage || '')
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
@@ -290,6 +292,7 @@ export default function AdminSiteSettings() {
         heroSlider,
         promoBanner,
         marqueeItems,
+        lightImage,
       })
       setSuccess(true)
       setTimeout(() => setSuccess(false), 4000)
@@ -456,6 +459,21 @@ export default function AdminSiteSettings() {
                   className="w-full bg-stone/40 border border-stone-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
               </div>
             </div>
+          </AccordionSection>
+
+          {/* 5. Light Logo Image */}
+          <AccordionSection
+            icon={Image}
+            title={t('admin.lightImage')}
+            desc={t('admin.lightImageDesc')}
+            badge={lightImage ? 1 : 0}
+          >
+            <ImagePicker
+              label={t('admin.addLightImage')}
+              value={lightImage}
+              onChange={setLightImage}
+              aspect="aspect-[3/1]"
+            />
           </AccordionSection>
         </div>
 

@@ -24,8 +24,8 @@ export default function AdminLayout() {
     { to: '/admin/products', label: t('admin.products'), icon: Package },
     { to: '/admin/orders', label: t('admin.orders'), icon: ShoppingCart },
     { to: '/admin/customers', label: t('admin.customers'), icon: Users },
-    { to: '/admin/categories', label: 'ক্যাটাগরি', icon: Tag },
-    { to: '/admin/settings', label: 'সাইট সেটিংস', icon: Settings },
+    { to: '/admin/categories', label: t('admin.categories'), icon: Tag },
+    { to: '/admin/settings', label: t('admin.siteSettings'), icon: Settings },
   ]
 
   if (!localStorage.getItem('adminToken')) return null
@@ -75,7 +75,7 @@ export default function AdminLayout() {
             onClick={handleLogout}
             className="flex items-center gap-2 text-sm text-sand/60 hover:text-red-400 transition-colors w-full"
           >
-            <LogOut size={15} /> লগআউট
+            <LogOut size={15} /> {t('admin.logout')}
           </button>
         </div>
       </aside>
@@ -85,7 +85,7 @@ export default function AdminLayout() {
           <span className="font-display text-lg">{t('admin.panel')}</span>
           <div className="flex items-center gap-4">
             <Link to="/" className="text-sm text-sand/70">{t('admin.backToShop')}</Link>
-            <button onClick={handleLogout} className="text-sm text-sand/70 hover:text-red-400">লগআউট</button>
+            <button onClick={handleLogout} className="text-sm text-sand/70 hover:text-red-400">{t('admin.logout')}</button>
           </div>
         </div>
         <div className="p-5 sm:p-8 max-w-6xl mx-auto">

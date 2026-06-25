@@ -3,6 +3,7 @@ import mongoose from 'mongoose'
 const siteSettingsSchema = new mongoose.Schema(
   {
     heroImage: { type: String, default: '' },
+  lightImage: { type: String, default: '' }, // white/light logo for dark backgrounds
     categoryImages: {
       shoes: { type: String, default: 'https://images.unsplash.com/photo-1551489186-cf8726f514f8?w=700&q=80' },
       bags:  { type: String, default: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=700&q=80' },

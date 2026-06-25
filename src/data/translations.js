@@ -310,6 +310,11 @@ export const translations = {
       loadingSettings: 'লোড হচ্ছে...',
       homepagePreview: 'হোমপেজ প্রিভিউ',
       noImagePreview: 'ছবি নেই',
+      categories: 'ক্যাটাগরি',
+      logout: 'লগআউট',
+      lightImage: 'লাইট লোগো ছবি',
+      lightImageDesc: 'অন্ধকার ব্যাকগ্রাউন্ডের জন্য হালকা/সাদা সংস্করণের লোগো (যেমন: ফুটার, অ্যাডমিন সাইডবার)',
+      addLightImage: 'নতুন লাইট ছবি যুক্ত করুন',
     },
     about: {
       hero: 'আমাদের গল্প',
@@ -644,6 +649,11 @@ export const translations = {
       loadingSettings: 'Loading...',
       homepagePreview: 'Homepage Preview',
       noImagePreview: 'No image',
+      categories: 'Categories',
+      logout: 'Log Out',
+      lightImage: 'Light Logo Image',
+      lightImageDesc: 'Light/white version of the logo for dark backgrounds (e.g. footer, admin sidebar)',
+      addLightImage: 'Add New Light Image',
     },
     notFound: {
       title: '404',
