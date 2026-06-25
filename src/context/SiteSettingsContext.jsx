@@ -8,8 +8,16 @@ import { api } from '../api.js'
 const SiteSettingsContext = createContext({ logoImage: '', setLogoImage: () => {} })
 
 export function SiteSettingsProvider({ children }) {
-  const [logoImage, setLogoImage] = useState('')
-  const [loading, setLoading] = useState(true)
+  // localStorage থেকে আগের logo নিয়ে শুরু করি — reload-এ flash হবে না
+  const [logoImage, setLogoImageState] = useState(() => localStorage.getItem('cached_logoImage') || '')
+  // cache থাকলে loading false দিয়ে শুরু — text flash হবে না
+  const [loading, setLoading] = useState(() => !localStorage.getItem('cached_logoImage'))
+
+  function setLogoImage(val) {
+    setLogoImageState(val)
+    if (val) localStorage.setItem('cached_logoImage', val)
+    else localStorage.removeItem('cached_logoImage')
+  }
 
   useEffect(() => {
     api.settings.get()

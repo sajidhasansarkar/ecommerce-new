@@ -18,7 +18,7 @@ export default function Navbar() {
   const { lang, toggleLang, t } = useLanguage()
   const { user, logout } = useAuth()
   const { categories } = useCategories()
-  const { logoImage } = useSiteSettings()
+  const { logoImage, loading: logoLoading } = useSiteSettings()
   const navigate = useNavigate()
   const catMenuRef = useRef(null)
   const catLeaveTimer = useRef(null)
@@ -67,6 +67,8 @@ export default function Navbar() {
       <style>{`
         .nav-pill {
           position: relative;
+          display: inline-flex;
+          align-items: center;
           font-size: 0.8rem;
           letter-spacing: 0.02em;
           transition: color 0.2s;
@@ -129,7 +131,9 @@ export default function Navbar() {
 
             {/* Brand */}
             <Link to="/" className="flex items-center gap-2 group shrink-0">
-              {logoImage ? (
+              {logoLoading ? (
+                <div className="h-10 lg:h-12 w-32 bg-stone/40 rounded animate-pulse" />
+              ) : logoImage ? (
                 <img
                   src={logoImage}
                   alt={t('brand.name')}
