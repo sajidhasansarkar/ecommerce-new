@@ -249,7 +249,6 @@ export default function ProductDetail() {
               </div>
             )
           })()}
-          </div>
           <button
             onClick={handleBuyNow}
             className="w-full bg-clay text-sand py-3 rounded-md font-medium hover:bg-clay-dark transition-colors mb-6"

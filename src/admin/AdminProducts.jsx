@@ -410,7 +410,7 @@ export default function AdminProducts() {
               ))}
               {list.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-ink/40">{t("admin.noAdminProducts")}</td>
+                  <td colSpan={6} className="px-4 py-10 text-center text-ink/40">{t("admin.noAdminProducts")}</td>
                 </tr>
               )}
             </tbody>

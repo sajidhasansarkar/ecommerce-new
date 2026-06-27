@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useLanguage } from '../context/LanguageContext.jsx'
-import { Package, DollarSign, AlertTriangle, TrendingUp, ShoppingCart, Wrench } from 'lucide-react'
+import { Package, DollarSign, AlertTriangle, TrendingUp, ShoppingCart } from 'lucide-react'
 import { api } from '../api.js'
 
 export default function Dashboard() {
@@ -9,26 +9,6 @@ export default function Dashboard() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [migrating, setMigrating] = useState(false)
-  const [migrateResult, setMigrateResult] = useState('')
-
-  async function runBadgeMigration() {
-    setMigrating(true)
-    setMigrateResult('')
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/products/migrate/badges`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('authToken')}` },
-      })
-      const data = await res.json()
-      setMigrateResult(data.message || 'Done')
-    } catch {
-      setMigrateResult('An error occurred')
-    } finally {
-      setMigrating(false)
-    }
-  }
-
   useEffect(() => {
     async function load() {
       try {
@@ -176,21 +156,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-      {/* Badge Migration Tool */}
-      <div className="bg-sand rounded-xl border border-stone-dark p-5 mt-6">
-        <h2 className="font-display text-lg text-ink mb-1 flex items-center gap-2">
-          <Wrench size={17} className="text-clay" /> Badge Migration
-        </h2>
-        <p className="text-xs text-ink/50 mb-4">Run once to set badge keys on older products. Use this if Best Seller / New / Sale filters are not working.</p>
-        <button
-          onClick={runBadgeMigration}
-          disabled={migrating}
-          className="bg-clay text-sand px-4 py-2 rounded-lg text-sm font-medium hover:bg-clay-dark transition-colors disabled:opacity-60"
-        >
-          {migrating ? 'Running...' : 'Update Badge Keys'}
-        </button>
-        {migrateResult && <p className="text-sm text-sage mt-3 font-medium">{migrateResult}</p>}
-      </div>
     </div>
   )
 }

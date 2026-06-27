@@ -183,27 +183,24 @@ function DiscountRuleCard({ rule, onChange, onDelete, categories, index }) {
         {/* Row 1: Enable + Discount type + Value */}
         <div className="grid grid-cols-[1fr_auto] gap-4 items-start">
           <div className="grid sm:grid-cols-2 gap-3">
-            {/* Discount type */}
+            {/* Discount type — smart toggle */}
             <div>
               <label className="block text-xs font-medium text-ink/60 mb-1.5">Discount Type</label>
-              <div className="flex rounded-xl overflow-hidden border border-stone-dark">
-                {[
-                  { value: 'percent', label: '% Off' },
-                  { value: 'flat',    label: '৳ Off' },
-                ].map(opt => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => onChange({ ...rule, type: opt.value })}
-                    className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                      rule.type === opt.value
-                        ? 'bg-clay text-sand'
-                        : 'bg-stone/40 text-ink/60 hover:bg-stone/80'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+              <div className="flex items-center gap-3 h-10">
+                <span className={`text-sm font-medium transition-colors ${rule.type === 'percent' ? 'text-ink' : 'text-ink/35'}`}>% Off</span>
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...rule, type: rule.type === 'percent' ? 'flat' : 'percent' })}
+                  aria-pressed={rule.type === 'flat'}
+                  className={`relative shrink-0 inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-clay/40 ${
+                    rule.type === 'flat' ? 'bg-clay' : 'bg-stone-dark/60'
+                  }`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                    rule.type === 'flat' ? 'translate-x-[22px]' : 'translate-x-1'
+                  }`} />
+                </button>
+                <span className={`text-sm font-medium transition-colors ${rule.type === 'flat' ? 'text-ink' : 'text-ink/35'}`}>৳ Off</span>
               </div>
             </div>
 
