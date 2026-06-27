@@ -152,7 +152,18 @@ export default function AdminProducts() {
 
   function handleChange(e) {
     const { name, value } = e.target
-    setForm((f) => ({ ...f, [name]: value }))
+    setForm((f) => {
+      const updated = { ...f, [name]: value }
+      // discountPercent বা oldPrice বদলালে price auto-calculate
+      if ((name === 'discountPercent' || name === 'oldPrice') && updated.oldPrice && updated.discountPercent) {
+        const old = Number(updated.oldPrice)
+        const pct = Number(updated.discountPercent)
+        if (old > 0 && pct > 0 && pct < 100) {
+          updated.price = Math.round(old - (old * pct / 100))
+        }
+      }
+      return updated
+    })
   }
 
   function addImageUrl() {
@@ -375,7 +386,7 @@ export default function AdminProducts() {
                   <td className="px-4 py-3 text-ink/70">
                     <span>{(() => {
                       const cat = categories.find(c => c.key === p.categoryKey)
-                      return cat ? (lang === 'bn' ? cat.name.bn : cat.name.en) : p.categoryKey
+                      return cat ? cat.name.en : p.categoryKey
                     })()}</span>
                     {p.badge?.bn && (
                       <span className="ml-2 inline-block bg-clay/10 text-clay text-[10px] font-semibold px-1.5 py-0.5 rounded">
@@ -450,7 +461,7 @@ export default function AdminProducts() {
                   <label className="block text-sm font-medium text-ink mb-1.5">Category</label>
                   <select name="categoryKey" value={form.categoryKey} onChange={handleChange}
                     className="w-full bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40">
-                    {categories.map((c) => <option key={c.key} value={c.key}>{lang === 'bn' ? c.name.bn : c.name.en}</option>)}
+                    {categories.map((c) => <option key={c.key} value={c.key}>{c.name.en}</option>)}
                   </select>
                 </div>
                 <div>
@@ -471,7 +482,7 @@ export default function AdminProducts() {
               {/* ━━━ Size & Stock System ━━━ */}
               <div className="border border-stone-dark rounded-lg p-4 space-y-3 bg-stone/20">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-ink/50 uppercase tracking-widest">Size অনুযায়ী Stock</p>
+                  <p className="text-xs font-semibold text-ink/50 uppercase tracking-widest">Size-wise Stock</p>
                   <button
                     type="button"
                     onClick={() => setForm(f => ({
@@ -487,7 +498,7 @@ export default function AdminProducts() {
 
                 {form.hasSizes ? (
                   <div className="space-y-2">
-                    <p className="text-xs text-ink/50">প্রতিটি size-এর জন্য নাম ও স্টক দিন। মোট stock auto-calculate হবে।</p>
+                    <p className="text-xs text-ink/50">Enter size name and stock for each variant. Total stock is auto-calculated.</p>
 
                     {/* Header row */}
                     <div className="grid grid-cols-[1fr_100px_32px] gap-2 text-xs font-medium text-ink/50 px-1">
@@ -547,23 +558,23 @@ export default function AdminProducts() {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xs text-ink/40">Toggle চালু করুন জুতা, পোশাকের মতো size-ভিত্তিক স্টক রাখতে।</p>
+                  <p className="text-xs text-ink/40">Enable for shoes, clothing and other size-based products.</p>
                 )}
               </div>
 
               {/* ━━━ Discount Section ━━━ */}
               <div className="border border-stone-dark rounded-lg p-4 space-y-3 bg-stone/20">
-                <p className="text-xs font-semibold text-ink/50 uppercase tracking-widest">Discount (এই প্রোডাক্টের জন্য)</p>
+                <p className="text-xs font-semibold text-ink/50 uppercase tracking-widest">Discount</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-ink mb-1.5">আগের দাম (৳) <span className="text-ink/40 font-normal">— কেটে দেখাবে</span></label>
+                    <label className="block text-sm font-medium text-ink mb-1.5">Original Price (৳) <span className="text-ink/40 font-normal">— shown as strikethrough</span></label>
                     <input name="oldPrice" type="number" min="0" value={form.oldPrice} onChange={handleChange}
-                      placeholder="যেমন: 2000"
+                      placeholder="e.g. 2000"
                       className="w-full bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-ink mb-1.5">
-                      Discount % <span className="text-ink/40 font-normal">— খালি রাখলে auto</span>
+                      Discount % <span className="text-ink/40 font-normal">— leave blank to auto-calculate</span>
                     </label>
                     <input name="discountPercent" type="number" min="1" max="99" value={form.discountPercent} onChange={handleChange}
                       placeholder="auto"
@@ -571,13 +582,12 @@ export default function AdminProducts() {
                   </div>
                 </div>
                 {/* Live preview */}
-                {form.oldPrice && form.price && Number(form.oldPrice) > Number(form.price) && (
-                  <div className="flex items-center gap-2 text-sm pt-1">
+                {form.oldPrice && form.price && Number(form.oldPrice) > Number(form.price) && (\n                  <div className="flex items-center gap-2 text-sm pt-1">
                     <span className="text-ink/50">Preview:</span>
                     <span className="font-mono font-medium text-ink">৳{form.price}</span>
                     <span className="font-mono text-ink/40 line-through text-xs">৳{form.oldPrice}</span>
                     <span className="bg-clay text-sand text-xs font-bold px-2 py-0.5 rounded-full">
-                      -{form.discountPercent || Math.round(((Number(form.oldPrice) - Number(form.price)) / Number(form.oldPrice)) * 100)}%
+                      -{form.discountPercent || parseFloat(((Number(form.oldPrice) - Number(form.price)) / Number(form.oldPrice) * 100).toFixed(2))}%
                     </span>
                   </div>
                 )}

@@ -1,4 +1,5 @@
 import Order from '../models/Order.js'
+import Product from '../models/Product.js'
 
 const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
@@ -31,6 +32,32 @@ export async function createOrder(req, res) {
       items, fullName, phone, address, city, paymentMethod, subtotal, shipping, total,
     })
     const saved = await order.save()
+
+    // Stock deduction — order place হওয়ার সাথে সাথে stock কমানো হচ্ছে
+    for (const item of items) {
+      const productId = item.productId || item._id
+      if (!productId) continue
+      const product = await Product.findById(productId)
+      if (!product) continue
+
+      const qty = Number(item.qty) || Number(item.quantity) || 1
+      const size = item.size || null
+
+      if (size && product.sizeVariants && product.sizeVariants.length > 0) {
+        // size-based stock deduction
+        const variant = product.sizeVariants.find(v => v.size === size)
+        if (variant) {
+          variant.stock = Math.max(0, variant.stock - qty)
+          product.stock = product.sizeVariants.reduce((sum, v) => sum + (v.stock || 0), 0)
+          await product.save()
+        }
+      } else {
+        // simple stock deduction
+        product.stock = Math.max(0, product.stock - qty)
+        await product.save()
+      }
+    }
+
     res.status(201).json(saved)
   } catch (err) {
     res.status(400).json({ message: err.message })

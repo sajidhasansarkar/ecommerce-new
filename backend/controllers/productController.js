@@ -100,9 +100,17 @@ export async function createProduct(req, res) {
       data.productId = await generateProductId(data.categoryKey || 'prod')
     }
 
-    // discountPercent: oldPrice থেকে auto-calculate যদি manually না দেওয়া হয়
-    if (!data.discountPercent && data.oldPrice && data.price && data.oldPrice > data.price) {
-      data.discountPercent = Math.round(((data.oldPrice - data.price) / data.oldPrice) * 100)
+    // Price/discount accurate calculation:
+    // Case 1: discountPercent দেওয়া হয়েছে → price = oldPrice - (oldPrice * discountPercent / 100)
+    // Case 2: price দেওয়া হয়েছে → discountPercent = exact calculation (no rounding to wrong value)
+    if (data.discountPercent && data.oldPrice) {
+      const pct = Number(data.discountPercent)
+      const old = Number(data.oldPrice)
+      data.price = Math.round(old - (old * pct / 100))
+    } else if (data.oldPrice && data.price && Number(data.oldPrice) > Number(data.price)) {
+      const old = Number(data.oldPrice)
+      const price = Number(data.price)
+      data.discountPercent = parseFloat(((old - price) / old * 100).toFixed(2))
     }
 
     // sizeVariants থাকলে stock auto-sum (pre-save hook-ও করে, এটা double safety)
@@ -123,12 +131,18 @@ export async function updateProduct(req, res) {
   try {
     const data = { ...req.body }
 
-    // discountPercent recalculate যদি price/oldPrice বদলায়
-    if (data.oldPrice && data.price && data.oldPrice > data.price) {
-      if (!data.discountPercent) {
-        data.discountPercent = Math.round(((data.oldPrice - data.price) / data.oldPrice) * 100)
-      }
-    } else if (!data.discountPercent) {
+    // Price/discount accurate calculation:
+    // Case 1: discountPercent দেওয়া হয়েছে → price = oldPrice - (oldPrice * discountPercent / 100)
+    // Case 2: price দেওয়া হয়েছে → discountPercent = exact calculation
+    if (data.discountPercent && data.oldPrice) {
+      const pct = Number(data.discountPercent)
+      const old = Number(data.oldPrice)
+      data.price = Math.round(old - (old * pct / 100))
+    } else if (data.oldPrice && data.price && Number(data.oldPrice) > Number(data.price)) {
+      const old = Number(data.oldPrice)
+      const price = Number(data.price)
+      data.discountPercent = parseFloat(((old - price) / old * 100).toFixed(2))
+    } else if (!data.oldPrice) {
       data.discountPercent = null
     }
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { ShoppingBag, Search, Menu, X, Languages, LogOut, ChevronDown, ChevronRight, Sparkles, TrendingUp, Tag, Info } from 'lucide-react'
 import { useCart } from '../context/CartContext.jsx'
 import { useLanguage } from '../context/LanguageContext.jsx'
@@ -9,6 +9,10 @@ import { useSiteSettings } from '../context/SiteSettingsContext.jsx'
 import UserMenu from './UserMenu.jsx'
 
 export default function Navbar() {
+  const location = useLocation()
+  const searchParams = new URLSearchParams(location.search)
+  const activeBadge = searchParams.get('badge') || ''
+  const activeCategory = searchParams.get('category') || ''
   const [open, setOpen] = useState(false)
   const [catOpen, setCatOpen] = useState(false)
   const [mobileCatOpen, setMobileCatOpen] = useState(false)
@@ -152,29 +156,29 @@ export default function Navbar() {
             {/* Desktop nav — centered naturally between brand and right icons */}
             <nav className="hidden lg:flex items-center gap-5 flex-1 justify-center">
 
-              <NavLink to="/shop" end className={({ isActive }) =>
-                `nav-pill text-ink/80 hover:text-clay ${isActive ? 'active' : ''}`
+              <NavLink to="/shop" end className={
+                `nav-pill text-ink/80 hover:text-clay ${location.pathname === '/shop' && !activeBadge && !activeCategory ? 'active' : ''}`
               }>
                 {t('nav.shop')}
               </NavLink>
 
-              <NavLink to="/shop?badge=new" className={({ isActive }) =>
-                `nav-pill flex items-center gap-1 text-ink/80 hover:text-clay ${isActive ? 'active' : ''}`
+              <NavLink to="/shop?badge=new" className={
+                `nav-pill flex items-center gap-1 text-ink/80 hover:text-clay ${activeBadge === 'new' ? 'active' : ''}`
               }>
                 <Sparkles size={12} className="text-emerald-500" />
                 {t('nav.newArrivals')}
                 <span className="nav-badge-new text-[9px] font-semibold px-1.5 py-0.5 rounded-full ml-0.5">NEW</span>
               </NavLink>
 
-              <NavLink to="/shop?badge=bestseller" className={({ isActive }) =>
-                `nav-pill flex items-center gap-1 text-ink/80 hover:text-clay ${isActive ? 'active' : ''}`
+              <NavLink to="/shop?badge=bestseller" className={
+                `nav-pill flex items-center gap-1 text-ink/80 hover:text-clay ${activeBadge === 'bestseller' ? 'active' : ''}`
               }>
                 <TrendingUp size={12} className="text-amber-500" />
                 {t('nav.bestSellers')}
               </NavLink>
 
-              <NavLink to="/shop?badge=sale" className={({ isActive }) =>
-                `nav-pill flex items-center gap-1 text-ink/80 hover:text-clay ${isActive ? 'active' : ''}`
+              <NavLink to="/shop?badge=sale" className={
+                `nav-pill flex items-center gap-1 text-ink/80 hover:text-clay ${activeBadge === 'sale' ? 'active' : ''}`
               }>
                 <Tag size={12} className="text-clay" />
                 {t('nav.deals')}
