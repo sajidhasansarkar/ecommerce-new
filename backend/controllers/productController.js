@@ -1,14 +1,51 @@
 import Product from '../models/Product.js'
 
-// GET /api/products  (?category=shoes&q=heel দিয়ে ফিল্টার করা যায়)
+// categoryKey থেকে prefix বানানো: shoes→SHOE, bags→BAG, watches→WTCH ইত্যাদি
+function categoryPrefix(categoryKey) {
+  const map = {
+    shoes:   'SHOE',
+    bags:    'BAG',
+    watches: 'WTCH',
+    jewelry: 'JWLY',
+    clothes: 'CLTH',
+    sports:  'SPRT',
+    beauty:  'BEAU',
+    kids:    'KIDS',
+  }
+  if (map[categoryKey]) return map[categoryKey]
+  // অজানা category হলে প্রথম ৪ অক্ষর uppercase নাও
+  return categoryKey.replace(/[^a-zA-Z]/g, '').slice(0, 4).toUpperCase() || 'PROD'
+}
+
+// নতুন productId generate: SHOE-001, SHOE-002 ...
+async function generateProductId(categoryKey) {
+  const prefix = categoryPrefix(categoryKey)
+  // এই prefix-এ সর্বশেষ productId খোঁজো
+  const last = await Product.findOne(
+    { productId: { $regex: `^${prefix}-` } },
+    { productId: 1 },
+    { sort: { productId: -1 } }
+  )
+  let next = 1
+  if (last?.productId) {
+    const num = parseInt(last.productId.split('-')[1], 10)
+    if (!isNaN(num)) next = num + 1
+  }
+  return `${prefix}-${String(next).padStart(3, '0')}`
+}
+
+// GET /api/products
 export async function getProducts(req, res) {
   try {
-    const { category, q } = req.query
+    const { category, subcategory, q } = req.query
     const filter = {}
 
-    if (category && category !== 'all') {
+    if (subcategory && subcategory !== 'all') {
+      filter.categoryKey = subcategory
+    } else if (category && category !== 'all') {
       filter.categoryKey = category
     }
+
     if (req.query.badge) {
       filter.$and = [
         { $or: [
@@ -20,8 +57,10 @@ export async function getProducts(req, res) {
     }
     if (q) {
       const qOr = { $or: [
+        { productId: { $regex: q, $options: 'i' } },
         { 'name.bn': { $regex: q, $options: 'i' } },
         { 'name.en': { $regex: q, $options: 'i' } },
+        { categoryKey: { $regex: q, $options: 'i' } },
         { 'description.bn': { $regex: q, $options: 'i' } },
         { 'description.en': { $regex: q, $options: 'i' } },
       ]}
@@ -36,10 +75,14 @@ export async function getProducts(req, res) {
   }
 }
 
-// GET /api/products/:id
+// GET /api/products/:id  — productId বা _id দুটো দিয়েই কাজ করে
 export async function getProductById(req, res) {
   try {
-    const product = await Product.findById(req.params.id)
+    const { id } = req.params
+    // SHOE-001 ফরম্যাট হলে productId দিয়ে খোঁজো, নইলে _id
+    const product = id.includes('-')
+      ? await Product.findOne({ productId: id })
+      : await Product.findById(id)
     if (!product) return res.status(404).json({ message: 'প্রোডাক্ট পাওয়া যায়নি' })
     res.json(product)
   } catch (err) {
@@ -47,10 +90,22 @@ export async function getProductById(req, res) {
   }
 }
 
-// POST /api/products   (অ্যাডমিন প্যানেল থেকে নতুন প্রোডাক্ট যুক্ত করার জন্য)
+// POST /api/products
 export async function createProduct(req, res) {
   try {
-    const product = new Product(req.body)
+    const data = { ...req.body }
+
+    // productId auto-generate (না দিলে)
+    if (!data.productId) {
+      data.productId = await generateProductId(data.categoryKey || 'prod')
+    }
+
+    // discountPercent: oldPrice থেকে auto-calculate যদি manually না দেওয়া হয়
+    if (!data.discountPercent && data.oldPrice && data.price && data.oldPrice > data.price) {
+      data.discountPercent = Math.round(((data.oldPrice - data.price) / data.oldPrice) * 100)
+    }
+
+    const product = new Product(data)
     const saved = await product.save()
     res.status(201).json(saved)
   } catch (err) {
@@ -58,10 +113,21 @@ export async function createProduct(req, res) {
   }
 }
 
-// PUT /api/products/:id   (অ্যাডমিন প্যানেল থেকে এডিট করার জন্য)
+// PUT /api/products/:id
 export async function updateProduct(req, res) {
   try {
-    const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
+    const data = { ...req.body }
+
+    // discountPercent recalculate যদি price/oldPrice বদলায়
+    if (data.oldPrice && data.price && data.oldPrice > data.price) {
+      if (!data.discountPercent) {
+        data.discountPercent = Math.round(((data.oldPrice - data.price) / data.oldPrice) * 100)
+      }
+    } else if (!data.discountPercent) {
+      data.discountPercent = null
+    }
+
+    const updated = await Product.findByIdAndUpdate(req.params.id, data, {
       new: true,
       runValidators: true,
     })
@@ -84,7 +150,6 @@ export async function deleteProduct(req, res) {
 }
 
 // POST /api/products/migrate/badges
-// badge.bn থেকে badgeKey backfill করে — একবার চালালেই হবে
 const BADGE_BN_TO_KEY = {
   'বেস্ট সেলার': 'bestseller',
   'নতুন':        'new',
@@ -99,13 +164,25 @@ export async function migrateBadgeKeys(req, res) {
     let updated = 0
     for (const p of products) {
       const key = BADGE_BN_TO_KEY[p.badge?.bn]
-      if (key) {
-        p.badgeKey = key
-        await p.save()
-        updated++
-      }
+      if (key) { p.badgeKey = key; await p.save(); updated++ }
     }
     res.json({ message: `${updated}টি প্রোডাক্টের badgeKey আপডেট হয়েছে`, updated })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}
+
+// POST /api/products/migrate/productIds  — পুরনো প্রোডাক্টে ID বসানোর জন্য একবার চালান
+export async function migrateProductIds(req, res) {
+  try {
+    const products = await Product.find({ productId: { $in: [null, ''] } }).sort({ createdAt: 1 })
+    let updated = 0
+    for (const p of products) {
+      p.productId = await generateProductId(p.categoryKey || 'prod')
+      await p.save()
+      updated++
+    }
+    res.json({ message: `${updated}টি প্রোডাক্টে ID যুক্ত হয়েছে`, updated })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }

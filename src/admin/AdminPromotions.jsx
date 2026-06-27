@@ -7,8 +7,26 @@ import { api } from '../api.js'
 import { useCategories } from '../context/CategoryContext.jsx'
 
 /* ══════════════════════════════════════════
-   Toggle Switch
+   Switch — standard small pill toggle
 ══════════════════════════════════════════ */
+function Switch({ enabled, onChange }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!enabled)}
+      aria-pressed={enabled}
+      className={`relative shrink-0 inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-clay/40 ${
+        enabled ? 'bg-clay' : 'bg-stone-dark/60'
+      }`}
+    >
+      <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+        enabled ? 'translate-x-[18px]' : 'translate-x-0.5'
+      }`} />
+    </button>
+  )
+}
+
+/* Toggle row — label + sublabel + switch */
 function Toggle({ enabled, onChange, label, sublabel }) {
   return (
     <div className="flex items-center justify-between gap-4">
@@ -16,22 +34,7 @@ function Toggle({ enabled, onChange, label, sublabel }) {
         <p className="text-sm font-medium text-ink">{label}</p>
         {sublabel && <p className="text-xs text-ink/40 mt-0.5">{sublabel}</p>}
       </div>
-      <button
-        type="button"
-        onClick={() => onChange(!enabled)}
-        aria-pressed={enabled}
-        className={`relative shrink-0 inline-flex h-7 w-12 items-center rounded-full border-2 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-clay/50 ${
-          enabled
-            ? 'bg-clay border-clay'
-            : 'bg-stone-dark/40 border-stone-dark'
-        }`}
-      >
-        <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
-            enabled ? 'translate-x-6' : 'translate-x-1'
-          }`}
-        />
-      </button>
+      <Switch enabled={enabled} onChange={onChange} />
     </div>
   )
 }
@@ -222,19 +225,7 @@ function DiscountRuleCard({ rule, onChange, onDelete, categories, index }) {
 
           {/* Enable toggle — right side */}
           <div className="pt-6">
-            <button
-              type="button"
-              onClick={() => onChange({ ...rule, enabled: !rule.enabled })}
-              className={`relative shrink-0 inline-flex h-7 w-12 items-center rounded-full border-2 transition-all duration-200 ${
-                rule.enabled
-                  ? 'bg-clay border-clay'
-                  : 'bg-stone-dark/40 border-stone-dark'
-              }`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
-                rule.enabled ? 'translate-x-6' : 'translate-x-1'
-              }`} />
-            </button>
+            <Switch enabled={rule.enabled} onChange={v => onChange({ ...rule, enabled: v })} />
           </div>
         </div>
 
@@ -505,17 +496,7 @@ export default function AdminPromotions() {
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-xs font-medium text-ink/60">Free shipping threshold</label>
-                      <button
-                        type="button"
-                        onClick={() => setFreeDeliveryEnabled(v => !v)}
-                        className={`relative inline-flex h-5 w-9 items-center rounded-full border transition-all duration-200 ${
-                          freeDeliveryEnabled ? 'bg-clay border-clay' : 'bg-stone-dark/40 border-stone-dark'
-                        }`}
-                      >
-                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform duration-200 ${
-                          freeDeliveryEnabled ? 'translate-x-[18px]' : 'translate-x-1'
-                        }`} />
-                      </button>
+                      <Switch enabled={freeDeliveryEnabled} onChange={setFreeDeliveryEnabled} />
                     </div>
                     <AmountInput
                       symbol="৳"

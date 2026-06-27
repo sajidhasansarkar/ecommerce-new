@@ -20,7 +20,7 @@ const BADGE_OPTIONS = [
 const emptyForm = {
   nameBn: '', nameEn: '',
   categoryKey: 'shoes',
-  price: '', oldPrice: '', stock: '',
+  price: '', oldPrice: '', discountPercent: '', stock: '',
   descriptionBn: '', descriptionEn: '',
   images: [],
   imageInput: '',
@@ -128,6 +128,7 @@ export default function AdminProducts() {
       categoryKey: product.categoryKey,
       price: product.price,
       oldPrice: product.oldPrice || '',
+      discountPercent: product.discountPercent || '',
       stock: product.stock,
       descriptionBn: product.description?.bn || '',
       descriptionEn: product.description?.en || '',
@@ -237,6 +238,8 @@ export default function AdminProducts() {
       description: { bn: form.descriptionBn, en: form.descriptionEn },
       price: Number(form.price),
       oldPrice: form.oldPrice ? Number(form.oldPrice) : null,
+      // manually দিলে সেটা নেওয়া হবে, না দিলে backend auto-calculate করবে
+      discountPercent: form.discountPercent ? Number(form.discountPercent) : null,
       stock: Number(form.stock),
       images: form.images,
       badge: (() => {
@@ -317,6 +320,7 @@ export default function AdminProducts() {
           <table className="w-full text-sm">
             <thead className="bg-stone/50 text-left text-ink/60 text-xs uppercase tracking-wide">
               <tr>
+                <th className="px-4 py-3">Product ID</th>
                 <th className="px-4 py-3">{t('admin.productCol')}</th>
                 <th className="px-4 py-3">{t('admin.categoryCol')}</th>
                 <th className="px-4 py-3">{t('admin.priceCol')}</th>
@@ -327,6 +331,16 @@ export default function AdminProducts() {
             <tbody>
               {list.map((p) => (
                 <tr key={p._id} className="border-t border-stone-dark">
+                  {/* Product ID */}
+                  <td className="px-4 py-3">
+                    {p.productId ? (
+                      <span className="font-mono text-xs bg-stone border border-stone-dark text-clay font-semibold px-2 py-1 rounded">
+                        {p.productId}
+                      </span>
+                    ) : (
+                      <span className="text-ink/30 text-xs">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {p.images?.[0] ? (
@@ -354,7 +368,19 @@ export default function AdminProducts() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-mono text-ink">৳{p.price}</td>
+                  <td className="px-4 py-3 font-mono text-ink">
+                    <div>৳{p.price}</div>
+                    {p.oldPrice && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="text-xs text-ink/40 line-through">৳{p.oldPrice}</span>
+                        {p.discountPercent && (
+                          <span className="text-[10px] font-bold text-clay bg-clay/10 px-1.5 py-0.5 rounded">
+                            -{p.discountPercent}%
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <span className={p.stock <= 10 ? 'text-clay font-medium' : 'text-ink/70'}>{p.stock}</span>
                   </td>
@@ -423,11 +449,37 @@ export default function AdminProducts() {
                     className="w-full bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1.5">Original Price (৳) — optional</label>
-                <input name="oldPrice" type="number" min="0" value={form.oldPrice} onChange={handleChange}
-                  placeholder="Enter to show a strikethrough price"
-                  className="w-full bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
+
+              {/* ━━━ Discount Section ━━━ */}
+              <div className="border border-stone-dark rounded-lg p-4 space-y-3 bg-stone/20">
+                <p className="text-xs font-semibold text-ink/50 uppercase tracking-widest">Discount (এই প্রোডাক্টের জন্য)</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-ink mb-1.5">আগের দাম (৳) <span className="text-ink/40 font-normal">— কেটে দেখাবে</span></label>
+                    <input name="oldPrice" type="number" min="0" value={form.oldPrice} onChange={handleChange}
+                      placeholder="যেমন: 2000"
+                      className="w-full bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-ink mb-1.5">
+                      Discount % <span className="text-ink/40 font-normal">— খালি রাখলে auto</span>
+                    </label>
+                    <input name="discountPercent" type="number" min="1" max="99" value={form.discountPercent} onChange={handleChange}
+                      placeholder="auto"
+                      className="w-full bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
+                  </div>
+                </div>
+                {/* Live preview */}
+                {form.oldPrice && form.price && Number(form.oldPrice) > Number(form.price) && (
+                  <div className="flex items-center gap-2 text-sm pt-1">
+                    <span className="text-ink/50">Preview:</span>
+                    <span className="font-mono font-medium text-ink">৳{form.price}</span>
+                    <span className="font-mono text-ink/40 line-through text-xs">৳{form.oldPrice}</span>
+                    <span className="bg-clay text-sand text-xs font-bold px-2 py-0.5 rounded-full">
+                      -{form.discountPercent || Math.round(((Number(form.oldPrice) - Number(form.price)) / Number(form.oldPrice)) * 100)}%
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div>

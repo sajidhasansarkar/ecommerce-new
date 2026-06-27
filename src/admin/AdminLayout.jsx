@@ -27,7 +27,7 @@ export default function AdminLayout() {
     { to: '/admin/orders', label: t('admin.orders'), icon: ShoppingCart },
     { to: '/admin/customers', label: t('admin.customers'), icon: Users },
     { to: '/admin/categories', label: t('admin.categories'), icon: Tag },
-    { to: '/admin/promotions', label: 'অফার ও ডেলিভারি', icon: Percent },
+    { to: '/admin/promotions', label: 'Offers & Delivery', icon: Percent },
     { to: '/admin/settings', label: t('admin.siteSettings'), icon: Settings },
   ]
   if (loading) {

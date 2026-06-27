@@ -1,15 +1,16 @@
 import mongoose from 'mongoose'
 
-// এই শেপটা frontend এর src/data/products.js এর সাথে মিলিয়ে রাখা হয়েছে,
-// যাতে ফ্রন্টএন্ডে কোনো বাড়তি ম্যাপিং কোড ছাড়াই API রেসপন্স সরাসরি কাজ করে।
-
 const productSchema = new mongoose.Schema(
   {
+    productId: {
+      type: String,
+      unique: true,
+      sparse: true, // পুরনো প্রোডাক্টে null থাকলেও unique conflict হবে না
+      // format: SHOE-001, BAG-002 — createProduct controller-এ auto-generate হয়
+    },
     categoryKey: {
       type: String,
       required: true,
-      // Enum is intentionally removed — valid values come from the Category collection.
-      // This lets admins add new categories without touching the schema.
     },
     name: {
       bn: { type: String, required: true },
@@ -21,10 +22,13 @@ const productSchema = new mongoose.Schema(
     },
     price: { type: Number, required: true },
     oldPrice: { type: Number, default: null },
+    // per-product discount — oldPrice থেকে auto-calculate করা যায়,
+    // কিন্তু admin চাইলে manually override করতে পারবে
+    discountPercent: { type: Number, default: null },
     rating: { type: Number, default: 0 },
     reviews: { type: Number, default: 0 },
     stock: { type: Number, required: true, default: 0 },
-    sizes: { type: [String], default: null }, // জুতার জন্য, ব্যাগের জন্য null/[]
+    sizes: { type: [String], default: null },
     colors: { type: [String], default: [] },
     images: { type: [String], default: [] },
     badge: {

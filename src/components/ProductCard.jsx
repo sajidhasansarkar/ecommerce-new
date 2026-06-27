@@ -11,6 +11,12 @@ export default function ProductCard({ product }) {
   const name = product.name[lang]
   const badge = product.badge ? product.badge[lang] : null
 
+  // server থেকে discountPercent আসলে সেটা নাও, না হলে calculate করো
+  const discountPct = product.discountPercent
+    || (product.oldPrice && product.oldPrice > product.price
+      ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
+      : null)
+
   function handleQuickAdd(e) {
     e.preventDefault()
     e.stopPropagation()
@@ -37,9 +43,20 @@ export default function ProductCard({ product }) {
           </div>
         )}
 
+        {/* Badge sticker (top-left) */}
         {badge && (
           <span className="tap-tight absolute top-2 left-2 sm:top-3 sm:left-3 bg-ink text-sand text-[10px] sm:text-[11px] font-medium px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full tracking-wide">
             {badge}
+          </span>
+        )}
+
+        {/* Discount % sticker (top-right corner) */}
+        {discountPct && (
+          <span
+            className="absolute top-2 right-2 sm:top-3 sm:right-3 flex items-center justify-center bg-clay text-sand font-mono font-bold text-[11px] sm:text-xs leading-none rounded-full shadow-md"
+            style={{ width: '2.6rem', height: '2.6rem' }}
+          >
+            -{discountPct}%
           </span>
         )}
 
@@ -58,10 +75,10 @@ export default function ProductCard({ product }) {
           {t('product.addToCart')}
         </button>
 
-        {/* Mobile: always-visible icon button in top-right */}
+        {/* Mobile: always-visible icon button — discount থাকলে top-right-এ sticker আছে, তাই এটা সরিয়ে top-left-এ রাখলাম */}
         <button
           onClick={handleQuickAdd}
-          className="sm:hidden absolute top-2 right-2 bg-sand/90 backdrop-blur-sm text-ink rounded-full p-2 shadow-sm active:scale-95 transition-transform tap-tight"
+          className={`sm:hidden absolute top-2 bg-sand/90 backdrop-blur-sm text-ink rounded-full p-2 shadow-sm active:scale-95 transition-transform tap-tight ${discountPct ? 'left-2' : 'right-2'}`}
           aria-label={t('product.addToCart')}
         >
           <ShoppingBag size={15} />

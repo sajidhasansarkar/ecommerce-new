@@ -9,6 +9,7 @@ import { api } from '../api.js'
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams()
   const activeCategory = searchParams.get('category') || 'all'
+  const activeSubcategory = searchParams.get('subcategory') || ''
   const activeBadge = searchParams.get('badge') || ''
   const searchQuery = searchParams.get('q') || ''
   const { lang, t } = useLanguage()
@@ -32,13 +33,14 @@ export default function Shop() {
     setLoading(true)
     const params = {}
     if (activeCategory !== 'all') params.category = activeCategory
+    if (activeSubcategory) params.subcategory = activeSubcategory
     if (activeBadge) params.badge = activeBadge
     if (searchQuery) params.q = searchQuery
     api.products.list(params)
       .then(setProducts)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [activeCategory, activeBadge, searchQuery])
+  }, [activeCategory, activeSubcategory, activeBadge, searchQuery])
 
   function setCategory(catKey) {
     const params = new URLSearchParams(searchParams)
