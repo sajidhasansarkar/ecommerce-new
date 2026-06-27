@@ -5,6 +5,7 @@ const orderItemSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed, // ObjectId or string — flexible for any source
     default: null,
   },
+  skuId: { type: String, default: null },  // SHOE-001 style product ID
   name: String,
   price: Number,
   image: String,

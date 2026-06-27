@@ -365,7 +365,7 @@ function ViewModal({ order, onClose, onDownload, onEdit, onDelete, onStatusChang
                     <p className="text-ink font-medium truncate">{item.name}</p>
                     {item.productId && (
                       <p className="text-ink/40 text-[10px] font-mono mt-0.5">
-                        ID: {String(item.productId).slice(-8).toUpperCase()}
+                        {item.skuId || String(item.productId).slice(-8).toUpperCase()}
                       </p>
                     )}
                     <p className="text-ink/50 text-xs">
@@ -664,7 +664,7 @@ export default function AdminOrders() {
                             <div className="min-w-0">
                               <p className="text-ink text-xs font-medium truncate max-w-[150px]">{item.name}</p>
                               <p className="text-ink/40 text-[10px] font-mono">
-                                ID: {item.productId ? String(item.productId).slice(-8).toUpperCase() : '—'}
+                                {item.skuId || (item.productId ? String(item.productId).slice(-8).toUpperCase() : '—')}
                               </p>
                               <p className="text-ink/40 text-[10px]">
                                 {item.size && `${item.size} · `}qty: {item.qty}

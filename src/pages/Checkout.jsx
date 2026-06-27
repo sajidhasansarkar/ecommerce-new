@@ -95,6 +95,7 @@ export default function Checkout() {
     try {
       const orderItems = items.map((item) => ({
         productId: item.id,
+        skuId: item.skuId || null,
         name: item.name,
         price: item.price,
         image: item.image,

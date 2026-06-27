@@ -34,6 +34,7 @@ export function CartProvider({ children }) {
     const { color = null, size = null, displayName = product.name } = options
     // Use MongoDB _id — this is what the order system needs
     const productId = product._id
+    const skuId = product.productId || null   // SHOE-001 style ID
     setItems((prev) => {
       const key = `${productId}__${color || 'default'}__${size || 'default'}`
       const existing = prev.find((i) => i.key === key)
@@ -45,6 +46,7 @@ export function CartProvider({ children }) {
         {
           key,
           id: productId,           // MongoDB ObjectId string
+          skuId,                   // SHOE-001 style product ID
           name: displayName,
           price: product.price,
           image: product.images?.[0] || '',
