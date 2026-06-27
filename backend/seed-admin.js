@@ -20,7 +20,7 @@ dotenv.config()
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
-const ADMIN_NAME = process.env.ADMIN_NAME || 'লাবণ্য অ্যাডমিন'
+const ADMIN_NAME = process.env.ADMIN_NAME || 'আমার শপ অ্যাডমিন'
 
 async function seedAdmin() {
   if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {

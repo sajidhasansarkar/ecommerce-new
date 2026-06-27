@@ -10,15 +10,23 @@ export async function getProducts(req, res) {
       filter.categoryKey = category
     }
     if (req.query.badge) {
-      filter['badge.en'] = { $regex: req.query.badge, $options: 'i' }
+      filter.$and = [
+        { $or: [
+          { badgeKey: req.query.badge },
+          { 'badge.en': { $regex: req.query.badge, $options: 'i' } },
+          { 'badge.bn': { $regex: req.query.badge, $options: 'i' } },
+        ]},
+      ]
     }
     if (q) {
-      filter.$or = [
+      const qOr = { $or: [
         { 'name.bn': { $regex: q, $options: 'i' } },
         { 'name.en': { $regex: q, $options: 'i' } },
         { 'description.bn': { $regex: q, $options: 'i' } },
         { 'description.en': { $regex: q, $options: 'i' } },
-      ]
+      ]}
+      if (filter.$and) filter.$and.push(qOr)
+      else filter.$and = [qOr]
     }
 
     const products = await Product.find(filter).sort({ createdAt: -1 })

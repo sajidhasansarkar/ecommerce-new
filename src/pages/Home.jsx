@@ -133,7 +133,7 @@ function HeroSlider({ images }) {
 
   if (!images.length) return (
     <div className="aspect-square rounded-2xl overflow-hidden bg-stone/60 flex items-center justify-center">
-      <p className="text-ink/30 font-display text-xl">লাবণ্য কালেকশন</p>
+      <p className="text-ink/30 font-display text-xl">আমার শপ কালেকশন</p>
     </div>
   )
 
@@ -242,7 +242,7 @@ export default function Home() {
   }, [])
 
   const sections = HOME_SECTIONS
-    .map(s => ({ ...s, items: products.filter(p => p.badge?.bn === s.bn) }))
+    .map(s => ({ ...s, items: products.filter(p => p.badgeKey === s.key || p.badge?.bn === s.bn) }))
     .filter(s => s.items.length > 0)
 
   const sliderImages = (() => {
@@ -371,7 +371,7 @@ export default function Home() {
             <h2 className="font-display text-xl sm:text-2xl lg:text-3xl text-ink">
               {lang === 'bn' ? section.titleBn : section.titleEn}
             </h2>
-            <Link to="/shop" className="text-sm text-clay hover:underline flex items-center gap-1 tap-tight">
+            <Link to={`/shop?badge=${section.key}`} className="text-sm text-clay hover:underline flex items-center gap-1 tap-tight">
               {t('home.viewAll')} <ArrowRight size={14} />
             </Link>
           </div>

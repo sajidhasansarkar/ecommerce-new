@@ -186,7 +186,7 @@ export default function AdminProducts() {
         images: [...f.images, ...uploaded.filter((u) => !f.images.includes(u))],
       }))
     } catch (e) {
-      setUploadError(e.message || t.admin.uploadError)
+      setUploadError(e.message || t("admin.uploadError"))
     } finally {
       setUploading(false)
     }
@@ -243,6 +243,7 @@ export default function AdminProducts() {
         const opt = BADGE_OPTIONS.find((b) => b.key === form.badgeKey)
         return { bn: opt?.bn || null, en: opt?.en || null }
       })(),
+      badgeKey: form.badgeKey || null,
     }
 
     setFormError('')
@@ -255,7 +256,7 @@ export default function AdminProducts() {
     deleteMutation.mutate(id)
   }
 
-  if (loading) return <div className="text-ink/50 py-10 text-center">{t.common.loading}</div>
+  if (loading) return <div className="text-ink/50 py-10 text-center">{t("common.loading")}</div>
 
   return (
     <div>
@@ -334,7 +335,7 @@ export default function AdminProducts() {
               ))}
               {list.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-ink/40">{t.admin.noAdminProducts}</td>
+                  <td colSpan={5} className="px-4 py-10 text-center text-ink/40">{t("admin.noAdminProducts")}</td>
                 </tr>
               )}
             </tbody>
@@ -480,9 +481,9 @@ export default function AdminProducts() {
                       className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-stone-dark rounded-md py-4 text-sm text-ink/60 hover:border-clay hover:text-clay transition-colors disabled:opacity-60"
                     >
                       {uploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-                      {uploading ? t.admin.uploadingCloudinary : t.admin.chooseImageBtn}
+                      {uploading ? t("admin.uploadingCloudinary") : t("admin.chooseImageBtn")}
                     </button>
-                    <p className="text-xs text-ink/40 mt-1">{t.admin.uploadHint}</p>
+                    <p className="text-xs text-ink/40 mt-1">{t("admin.uploadHint")}</p>
                   </div>
                 )}
 
@@ -501,13 +502,13 @@ export default function AdminProducts() {
                     {uploading ? (
                       <>
                         <Loader2 size={28} className="animate-spin text-clay" />
-                        <p className="text-sm font-medium">{t.admin.uploadingCloudinary}</p>
+                        <p className="text-sm font-medium">{t("admin.uploadingCloudinary")}</p>
                       </>
                     ) : (
                       <>
                         <Image size={28} className={dragOver ? 'text-clay' : 'text-ink/30'} />
-                        <p className="text-sm font-medium">{dragOver ? t.admin.dropHere : t.admin.dragHere}</p>
-                        <p className="text-xs">{t.admin.dragDropHint}</p>
+                        <p className="text-sm font-medium">{dragOver ? t("admin.dropHere") : t("admin.dragHere")}</p>
+                        <p className="text-xs">{t("admin.dragDropHint")}</p>
                       </>
                     )}
                   </div>

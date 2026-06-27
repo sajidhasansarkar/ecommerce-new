@@ -3,7 +3,7 @@ import { translations } from '../data/translations.js'
 
 const LanguageContext = createContext(null)
 
-const STORAGE_KEY = 'labonno_lang'
+const STORAGE_KEY = 'my_shop_lang'
 
 export function LanguageProvider({ children }) {
   const [lang, setLang] = useState(() => {

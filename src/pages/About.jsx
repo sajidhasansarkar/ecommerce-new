@@ -300,13 +300,13 @@ export default function About() {
               </p>
               <h2 className={`rv right ${storyVisible ? 'show' : ''} font-display text-3xl lg:text-4xl text-ink mb-6`}
                 style={{ transitionDelay: '180ms' }}>
-                {lang === 'bn' ? 'লাবণ্যর শুরুর কথা' : 'How Labanya Began'}
+                {lang === 'bn' ? 'আমার শপের শুরুর কথা' : 'How My Shop Began'}
               </h2>
               <p className={`rv right ${storyVisible ? 'show' : ''} text-ink/65 leading-relaxed mb-5`}
                 style={{ transitionDelay: '240ms' }}>
                 {lang === 'bn'
-                  ? 'লাবণ্যর জন্ম ঢাকার একটি ছোট ঘরে, ২০২১ সালে। প্রতিষ্ঠাতা তানভীর আহমেদ বিশ্বাস করতেন — প্রতিটি মানুষ একটু বিলাসিতার যোগ্য, দামে নয়, মানে।'
-                  : 'Labanya was born in a small room in Dhaka in 2021. Founder Tanvir Ahmed believed that every person deserves a touch of luxury — not in price, but in quality.'}
+                  ? 'আমার শপের জন্ম ঢাকার একটি ছোট ঘরে, ২০২১ সালে। প্রতিষ্ঠাতা তানভীর আহমেদ বিশ্বাস করতেন — প্রতিটি মানুষ একটু বিলাসিতার যোগ্য, দামে নয়, মানে।'
+                  : 'My Shop was born in a small room in Dhaka in 2021. Founder Tanvir Ahmed believed that every person deserves a touch of luxury — not in price, but in quality.'}
               </p>
               <p className={`rv right ${storyVisible ? 'show' : ''} text-ink/65 leading-relaxed`}
                 style={{ transitionDelay: '300ms' }}>

@@ -1,4 +1,4 @@
-# লাবণ্য ব্যাকএন্ড — সেটআপ গাইড
+# আমার শপ ব্যাকএন্ড — সেটআপ গাইড
 
 ## ১. কোথায় রাখবেন
 
@@ -30,7 +30,7 @@ npm install
 npm run dev
 ```
 
-সার্ভার চলবে `http://localhost:5000`-এ। ব্রাউজারে গিয়ে দেখুন "লাবণ্য API চলছে ✓" লেখা আসছে কিনা।
+সার্ভার চলবে `http://localhost:5000`-এ। ব্রাউজারে গিয়ে দেখুন "আমার শপ API চলছে ✓" লেখা আসছে কিনা।
 
 ## ৩. প্রথম অ্যাডমিন ইউজার বানানো
 
@@ -177,7 +177,7 @@ const res = await fetch(`http://localhost:5000/api/auth/${endpoint}`, {
 })
 const data = await res.json()
 if (data.token) {
-  localStorage.setItem('labonno_token', data.token)
+  localStorage.setItem('my_shop_token', data.token)
   navigate('/')
 } else {
   setError(data.message)

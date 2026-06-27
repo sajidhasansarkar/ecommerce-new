@@ -31,6 +31,7 @@ const productSchema = new mongoose.Schema(
       bn: { type: String, default: null },
       en: { type: String, default: null },
     },
+    badgeKey: { type: String, default: null },
   },
   { timestamps: true }
 )

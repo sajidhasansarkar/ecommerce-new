@@ -57,7 +57,7 @@ app.use('/api/categories', categoryRoutes)
 app.use('/api/upload', uploadRoutes)
 
 app.get('/', (req, res) => {
-  res.send('লাবণ্য API চলছে ✓')
+  res.send('আমার শপ API চলছে ✓')
 })
 
 const PORT = process.env.PORT || 5000
