@@ -45,7 +45,7 @@ export default function AdminCategories() {
 
   async function handleSave() {
     if (!form.key.trim() || !form.nameBn.trim() || !form.nameEn.trim()) {
-      setError('Key, বাংলা নাম এবং ইংরেজি নাম আবশ্যক।')
+      setError('Key, Bengali name, and English name are required.')
       return
     }
     setSaving(true)
@@ -87,12 +87,10 @@ export default function AdminCategories() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-display text-2xl text-ink">
-            {lang === 'bn' ? 'ক্যাটাগরি ম্যানেজমেন্ট' : 'Category Management'}
+            {'Category Management'}
           </h1>
           <p className="text-sm text-ink/50 mt-1">
-            {lang === 'bn'
-              ? 'নতুন ক্যাটাগরি যোগ করুন — Navbar ও Shop-এ স্বয়ংক্রিয়ভাবে দেখা যাবে।'
-              : 'Add categories here — they appear in the Navbar and Shop automatically.'}
+            {'Add categories here — they appear in the Navbar and Shop automatically.'}
           </p>
         </div>
         <button
@@ -100,7 +98,7 @@ export default function AdminCategories() {
           className="flex items-center gap-2 bg-ink text-sand px-4 py-2 rounded-lg text-sm font-medium hover:bg-clay transition-colors"
         >
           <Plus size={16} />
-          {lang === 'bn' ? 'নতুন ক্যাটাগরি' : 'New Category'}
+          {'New Category'}
         </button>
       </div>
 
@@ -108,7 +106,7 @@ export default function AdminCategories() {
       <div className="space-y-2">
         {categories.length === 0 && (
           <div className="text-center py-16 text-ink/40 text-sm border border-dashed border-stone-dark rounded-xl">
-            {lang === 'bn' ? 'কোনো ক্যাটাগরি নেই। প্রথমটি যোগ করুন!' : 'No categories yet. Add your first one!'}
+            {'No categories yet. Add your first one!'}
           </div>
         )}
         {categories.map((cat) => (
@@ -151,9 +149,7 @@ export default function AdminCategories() {
           <div className="relative bg-sand rounded-2xl p-6 w-full max-w-md shadow-xl">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-display text-lg">
-                {editingId
-                  ? (lang === 'bn' ? 'ক্যাটাগরি সম্পাদনা' : 'Edit Category')
-                  : (lang === 'bn' ? 'নতুন ক্যাটাগরি' : 'New Category')}
+                {editingId ? 'Edit Category' : 'New Category'}
               </h2>
               <button onClick={() => setModalOpen(false)}><X size={20} /></button>
             </div>
@@ -162,7 +158,7 @@ export default function AdminCategories() {
               {/* Key */}
               <div>
                 <label className="block text-xs font-medium text-ink/60 mb-1">
-                  Key (ইউনিক ID) *
+                  Key (Unique ID) *
                 </label>
                 <input
                   value={form.key}
@@ -172,17 +168,17 @@ export default function AdminCategories() {
                   className="w-full border border-stone-dark rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-clay/40 disabled:opacity-50 disabled:bg-stone/40"
                 />
                 <p className="text-[11px] text-ink/40 mt-1">
-                  {lang === 'bn' ? 'ছোট হাতে লিখুন, স্পেস নয় (dash ব্যবহার করুন)। একবার সেট হলে পরিবর্তন করা যাবে না।' : 'Lowercase, no spaces (use dashes). Cannot change after creation.'}
+                  {'Lowercase, no spaces (use dashes). Cannot change after creation.'}
                 </p>
               </div>
 
               {/* Bengali name */}
               <div>
-                <label className="block text-xs font-medium text-ink/60 mb-1">বাংলা নাম *</label>
+                <label className="block text-xs font-medium text-ink/60 mb-1">Bengali Name *</label>
                 <input
                   value={form.nameBn}
                   onChange={(e) => setForm({ ...form, nameBn: e.target.value })}
-                  placeholder="যেমন: গহনা"
+                  placeholder="e.g. Jewelry"
                   className="w-full border border-stone-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40"
                 />
               </div>
@@ -201,7 +197,7 @@ export default function AdminCategories() {
               {/* Icon */}
               <div>
                 <label className="block text-xs font-medium text-ink/60 mb-1">
-                  {lang === 'bn' ? 'আইকন (ইমোজি, ঐচ্ছিক)' : 'Icon (emoji, optional)'}
+                  {'Icon (emoji, optional)'}
                 </label>
                 <input
                   value={form.icon}
@@ -214,7 +210,7 @@ export default function AdminCategories() {
               {/* Sort order */}
               <div>
                 <label className="block text-xs font-medium text-ink/60 mb-1">
-                  {lang === 'bn' ? 'ক্রম (Nav-এ কোন ক্রমে দেখাবে)' : 'Sort Order (position in Nav)'}
+                  {'Sort Order (position in Nav)'}
                 </label>
                 <input
                   type="number"
@@ -232,7 +228,7 @@ export default function AdminCategories() {
                 onClick={() => setModalOpen(false)}
                 className="flex-1 border border-stone-dark rounded-lg py-2 text-sm"
               >
-                {lang === 'bn' ? 'বাতিল' : 'Cancel'}
+                {'Cancel'}
               </button>
               <button
                 onClick={handleSave}
@@ -240,7 +236,7 @@ export default function AdminCategories() {
                 className="flex-1 bg-ink text-sand rounded-lg py-2 text-sm font-medium hover:bg-clay transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
               >
                 {saving && <Loader2 size={14} className="animate-spin" />}
-                {editingId ? (lang === 'bn' ? 'আপডেট করুন' : 'Update') : (lang === 'bn' ? 'যোগ করুন' : 'Add')}
+                {editingId ? 'Update' : 'Add'}
               </button>
             </div>
           </div>
@@ -253,22 +249,20 @@ export default function AdminCategories() {
           <div className="absolute inset-0 bg-ink/50" onClick={() => setDeleteTarget(null)} />
           <div className="relative bg-sand rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <h3 className="font-display text-lg mb-2">
-              {lang === 'bn' ? 'ক্যাটাগরি মুছবেন?' : 'Delete Category?'}
+              {'Delete Category?'}
             </h3>
             <p className="text-sm text-ink/60 mb-5">
-              {lang === 'bn'
-                ? `"${deleteTarget.name.bn}" মুছে ফেলা হবে। এই ক্যাটাগরির প্রোডাক্টগুলো থাকবে, কিন্তু Nav ও Shop থেকে ক্যাটাগরিটি সরে যাবে।`
-                : `"${deleteTarget.name.en}" will be removed. Products in this category will remain, but the category will disappear from Nav and Shop.`}
+              {`"${deleteTarget.name.en}" will be removed. Products in this category will remain, but the category will disappear from Nav and Shop.`}
             </p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteTarget(null)} className="flex-1 border border-stone-dark rounded-lg py-2 text-sm">
-                {lang === 'bn' ? 'বাতিল' : 'Cancel'}
+                {'Cancel'}
               </button>
               <button
                 onClick={() => handleDelete(deleteTarget)}
                 className="flex-1 bg-red-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-red-600 transition-colors"
               >
-                {lang === 'bn' ? 'মুছুন' : 'Delete'}
+                {'Delete'}
               </button>
             </div>
           </div>

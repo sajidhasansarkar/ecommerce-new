@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Package, ShoppingCart, Users, Settings, ArrowLeft, LogOut, Tag, Loader2 } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, Settings, ArrowLeft, LogOut, Tag, Loader2, Percent } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 
@@ -27,19 +27,90 @@ export default function AdminLayout() {
     { to: '/admin/orders', label: t('admin.orders'), icon: ShoppingCart },
     { to: '/admin/customers', label: t('admin.customers'), icon: Users },
     { to: '/admin/categories', label: t('admin.categories'), icon: Tag },
+    { to: '/admin/promotions', label: 'অফার ও ডেলিভারি', icon: Percent },
     { to: '/admin/settings', label: t('admin.siteSettings'), icon: Settings },
   ]
-
-  // Auth লোড হওয়ার আগে loading spinner দেখাও — এটাই reload-এ error ঠেকায়
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone flex items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-clay" />
+      <div className="min-h-screen bg-ink flex flex-col items-center justify-center gap-6">
+        {/* Orbital spinner */}
+        <div className="relative w-16 h-16">
+          {/* Outer ring */}
+          <span style={{
+            position: 'absolute', inset: 0,
+            borderRadius: '50%',
+            border: '2px solid transparent',
+            borderTopColor: '#C75D3C',
+            borderRightColor: '#C75D3C33',
+            animation: 'admin-spin 0.9s cubic-bezier(0.6,0.2,0.4,0.8) infinite',
+          }} />
+          {/* Middle ring */}
+          <span style={{
+            position: 'absolute', inset: '8px',
+            borderRadius: '50%',
+            border: '2px solid transparent',
+            borderTopColor: '#B8935F',
+            borderLeftColor: '#B8935F44',
+            animation: 'admin-spin-rev 1.2s cubic-bezier(0.5,0.1,0.5,0.9) infinite',
+          }} />
+          {/* Center dot */}
+          <span style={{
+            position: 'absolute', inset: '50%',
+            width: '6px', height: '6px',
+            marginLeft: '-3px', marginTop: '-3px',
+            borderRadius: '50%',
+            background: '#C75D3C',
+            animation: 'admin-pulse 1.2s ease-in-out infinite',
+          }} />
+        </div>
+
+        {/* Loading text */}
+        <div className="text-center">
+          <p style={{
+            color: '#FAF7F2',
+            fontSize: '0.95rem',
+            fontWeight: 500,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            animation: 'admin-fade 1.5s ease-in-out infinite alternate',
+          }}>
+            লোড হচ্ছে
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', marginTop: '10px' }}>
+            {[0, 1, 2].map(i => (
+              <span key={i} style={{
+                width: '5px', height: '5px',
+                borderRadius: '50%',
+                background: '#C75D3C',
+                animation: `admin-dot 1.2s ease-in-out ${i * 0.2}s infinite`,
+              }} />
+            ))}
+          </div>
+        </div>
+
+        <style>{`
+          @keyframes admin-spin {
+            to { transform: rotate(360deg); }
+          }
+          @keyframes admin-spin-rev {
+            to { transform: rotate(-360deg); }
+          }
+          @keyframes admin-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.8); opacity: 0.5; }
+          }
+          @keyframes admin-fade {
+            from { opacity: 0.4; }
+            to { opacity: 1; }
+          }
+          @keyframes admin-dot {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.3; }
+            40% { transform: translateY(-6px); opacity: 1; }
+          }
+        `}</style>
       </div>
     )
   }
-
-  // Token নেই — useEffect navigate করবে, এখানে কিছু render করব না
   if (!localStorage.getItem('adminToken')) return null
 
   return (

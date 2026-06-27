@@ -17,10 +17,9 @@ export async function getSettings(req, res) {
 export async function updateSettings(req, res) {
   try {
     const s = await getOrCreate()
-    const { heroImage, categoryImages, heroSlider, promoBanner, marqueeItems, lightImage, logoImage } = req.body
+    const { heroImage, categoryImages, heroSlider, promoBanner, marqueeItems, logoImage, promotions } = req.body
 
     if (typeof heroImage   === 'string') s.heroImage   = heroImage
-    if (typeof lightImage  === 'string') s.lightImage  = lightImage
     if (typeof logoImage   === 'string') s.logoImage   = logoImage
     // categoryImages এখন [{key, image}] array
     if (Array.isArray(categoryImages))   s.categoryImages = categoryImages
@@ -31,6 +30,15 @@ export async function updateSettings(req, res) {
       if (typeof promoBanner.title    === 'string') s.promoBanner.title    = promoBanner.title
       if (typeof promoBanner.subtitle === 'string') s.promoBanner.subtitle = promoBanner.subtitle
       if (typeof promoBanner.link     === 'string') s.promoBanner.link     = promoBanner.link
+    }
+    if (promotions && typeof promotions === 'object') {
+      if (!s.promotions) s.promotions = {}
+      if (typeof promotions.deliveryEnabled       === 'boolean') s.promotions.deliveryEnabled       = promotions.deliveryEnabled
+      if (typeof promotions.deliveryCharge        === 'number')  s.promotions.deliveryCharge        = promotions.deliveryCharge
+      if (typeof promotions.freeDeliveryEnabled   === 'boolean') s.promotions.freeDeliveryEnabled   = promotions.freeDeliveryEnabled
+      if (typeof promotions.freeDeliveryThreshold === 'number')  s.promotions.freeDeliveryThreshold = promotions.freeDeliveryThreshold
+      if (Array.isArray(promotions.discountRules))               s.promotions.discountRules         = promotions.discountRules
+      s.markModified('promotions')
     }
 
     await s.save()

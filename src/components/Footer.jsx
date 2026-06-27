@@ -6,7 +6,7 @@ import { useSiteSettings } from '../context/SiteSettingsContext.jsx'
 
 export default function Footer() {
   const { t } = useLanguage()
-  const { logoImage, lightImage } = useSiteSettings()
+  const { logoImage } = useSiteSettings()
   const [email, setEmail] = useState('')
   const [subscribed, setSubscribed] = useState(false)
 
@@ -76,9 +76,9 @@ export default function Footer() {
               {/* Brand Column */}
               <div className="footer-col footer-brand-col">
                 <div className="footer-logo-wrap">
-                  {(lightImage || logoImage) ? (
+                  {logoImage ? (
                     <img
-                      src={lightImage || logoImage}
+                      src={logoImage}
                       alt={t('brand.name')}
                       className="footer-brand-logo"
                     />
@@ -289,11 +289,11 @@ export default function Footer() {
           animation: fadeSlideUp 0.6s ease both;
         }
         .footer-brand-logo {
-          height: 40px;
+          height: 64px;
           width: auto;
-          max-width: 160px;
+          max-width: 220px;
           object-fit: contain;
-          margin-bottom: 6px;
+          margin-bottom: 8px;
           animation: fadeSlideUp 0.6s ease both;
         }
         .footer-brand-line {

@@ -9,19 +9,19 @@ const STATUS_COLORS = {
   delivered:  'bg-green-100 text-green-700',
   cancelled:  'bg-red-100 text-red-600',
 }
-const STATUS_BN = {
-  processing: 'প্রসেসিং',
-  shipped:    'শিপড',
-  delivered:  'ডেলিভার্ড',
-  cancelled:  'বাতিল',
+const STATUS_EN = {
+  processing: 'Processing',
+  shipped:    'Shipped',
+  delivered:  'Delivered',
+  cancelled:  'Cancelled',
 }
-const PAYMENT_BN = {
-  cod:   'ক্যাশ অন ডেলিভারি',
-  bkash: 'বিকাশ / নগদ',
+const PAYMENT_EN = {
+  cod:   'Cash on Delivery',
+  bkash: 'Mobile Banking',
 }
 
 function formatDate(d) {
-  return new Date(d).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })
+  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 function formatDateEn(d) {
   return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -29,8 +29,8 @@ function formatDateEn(d) {
 
 /* ─── Build receipt HTML ─── */
 function buildReceiptHTML(order) {
-  const statusLabel = STATUS_BN[order.status] || order.status
-  const paymentLabel = PAYMENT_BN[order.paymentMethod] || order.paymentMethod
+  const statusLabel = STATUS_EN[order.status] || order.status
+  const paymentLabel = PAYMENT_EN[order.paymentMethod] || order.paymentMethod
 
   const statusStyle = {
     processing: 'background:#fef3c7;color:#92400e',
@@ -43,7 +43,7 @@ function buildReceiptHTML(order) {
     <tr style="background:${i % 2 === 0 ? '#fff' : '#fafaf9'}">
       <td style="padding:10px 12px;border-bottom:1px solid #f0ede8">
         <div style="font-weight:600;color:#1a1a1a">${item.name}</div>
-        ${item.size || item.color ? `<div style="font-size:11px;color:#9a8f85;margin-top:2px">${[item.size && `সাইজ: ${item.size}`, item.color && `রং: ${item.color}`].filter(Boolean).join(' · ')}</div>` : ''}
+        ${item.size || item.color ? `<div style="font-size:11px;color:#9a8f85;margin-top:2px">${[item.size && `Size: ${item.size}`, item.color && `Color: ${item.color}`].filter(Boolean).join(' · ')}</div>` : ''}
       </td>
       <td style="padding:10px 12px;border-bottom:1px solid #f0ede8;text-align:center;color:#555">${item.qty}</td>
       <td style="padding:10px 12px;border-bottom:1px solid #f0ede8;text-align:right;color:#555">৳${item.price.toLocaleString()}</td>
@@ -51,7 +51,7 @@ function buildReceiptHTML(order) {
     </tr>`).join('')
 
   return `<!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -95,9 +95,9 @@ function buildReceiptHTML(order) {
 <body>
 <div class="page">
   <div class="header">
-    <div class="brand">আমার শপ<span>.</span></div>
+    <div class="brand">My Shop<span>.</span></div>
     <div class="receipt-label">
-      <h2>অর্ডার রিসিট</h2>
+      <h2>Order Receipt</h2>
       <div class="order-num">${order.orderNumber}</div>
       <div class="date">${formatDateEn(order.createdAt)}</div>
       <div><span class="status-pill">${statusLabel}</span></div>
@@ -106,56 +106,56 @@ function buildReceiptHTML(order) {
 
   <div class="body">
     <div class="section">
-      <div class="section-title">ডেলিভারি তথ্য</div>
+      <div class="section-title">Delivery Information</div>
       <div class="info-grid">
         <div class="info-item">
-          <label>গ্রাহকের নাম</label>
+          <label>Customer Name</label>
           <p>${order.fullName}</p>
         </div>
         <div class="info-item">
-          <label>ফোন নম্বর</label>
+          <label>Phone Number</label>
           <p>${order.phone}</p>
         </div>
         <div class="info-item full">
-          <label>ঠিকানা</label>
+          <label>Address</label>
           <p>${order.address}, ${order.city}</p>
         </div>
         <div class="info-item">
-          <label>পেমেন্ট পদ্ধতি</label>
+          <label>Payment Method</label>
           <p>${paymentLabel}</p>
         </div>
         <div class="info-item">
-          <label>অর্ডারের তারিখ</label>
+          <label>Order Date</label>
           <p>${formatDateEn(order.createdAt)}</p>
         </div>
       </div>
     </div>
 
     <div class="section">
-      <div class="section-title">প্রোডাক্টসমূহ</div>
+      <div class="section-title">Products</div>
       <table>
         <thead>
           <tr>
-            <th>পণ্য</th>
-            <th style="text-align:center">পরিমাণ</th>
-            <th style="text-align:right">একক মূল্য</th>
-            <th style="text-align:right">মোট</th>
+            <th>Product</th>
+            <th style="text-align:center">Qty</th>
+            <th style="text-align:right">Unit Price</th>
+            <th style="text-align:right">Total</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
 
       <div class="totals-box">
-        <div class="totals-row"><span>সাবটোটাল</span><span>৳${order.subtotal.toLocaleString()}</span></div>
-        <div class="totals-row"><span>ডেলিভারি চার্জ</span><span>${order.shipping === 0 ? 'বিনামূল্যে' : '৳' + order.shipping.toLocaleString()}</span></div>
-        <div class="totals-row grand"><span>সর্বমোট পরিশোধযোগ্য</span><span>৳${order.total.toLocaleString()}</span></div>
+        <div class="totals-row"><span>Subtotal</span><span>৳${order.subtotal.toLocaleString()}</span></div>
+        <div class="totals-row"><span>Delivery Charge</span><span>${order.shipping === 0 ? 'Free' : '৳' + order.shipping.toLocaleString()}</span></div>
+        <div class="totals-row grand"><span>Grand Total</span><span>৳${order.total.toLocaleString()}</span></div>
       </div>
     </div>
   </div>
 
   <div class="footer">
-    <strong>আমার শপ</strong> — ঢাকা, বাংলাদেশ &nbsp;·&nbsp; hello@yourstore.com
-    <br/>ধন্যবাদ আপনার অর্ডারের জন্য! এই রিসিটটি সংরক্ষণ করুন।
+    <strong>My Shop</strong> &nbsp;·&nbsp; hello@yourstore.com
+    <br/>Thank you for your order! Please keep this receipt.
   </div>
 </div>
 <script>
@@ -344,10 +344,10 @@ function ViewModal({ order, onClose, onDownload, onEdit, onDelete, onStatusChang
             <div className="col-span-2">
               <InfoRow label={t("admin.addressLabel")} value={`${order.address}, ${order.city}`} />
             </div>
-            <InfoRow label={t("admin.paymentLabel")} value={PAYMENT_BN[order.paymentMethod] || order.paymentMethod} />
+            <InfoRow label={t("admin.paymentLabel")} value={PAYMENT_EN[order.paymentMethod] || order.paymentMethod} />
             <InfoRow label={t("admin.statusCol")} value={
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[order.status]}`}>
-                {STATUS_BN[order.status]}
+                {STATUS_EN[order.status]}
               </span>
             } />
           </div>
@@ -399,7 +399,7 @@ function ViewModal({ order, onClose, onDownload, onEdit, onDelete, onStatusChang
                 >
                   {updatingId === order._id && order.status !== s
                     ? <Loader2 size={12} className="animate-spin inline" />
-                    : STATUS_BN[s]}
+                    : STATUS_EN[s]}
                 </button>
               ))}
             </div>
@@ -628,7 +628,7 @@ export default function AdminOrders() {
                     <td className="px-4 py-3 font-mono text-ink">৳{o.total.toLocaleString()}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[o.status]}`}>
-                        {STATUS_BN[o.status]}
+                        {STATUS_EN[o.status]}
                       </span>
                     </td>
                     <td className="px-4 py-3">

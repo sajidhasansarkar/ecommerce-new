@@ -82,3 +82,31 @@ export async function deleteProduct(req, res) {
     res.status(500).json({ message: err.message })
   }
 }
+
+// POST /api/products/migrate/badges
+// badge.bn থেকে badgeKey backfill করে — একবার চালালেই হবে
+const BADGE_BN_TO_KEY = {
+  'বেস্ট সেলার': 'bestseller',
+  'নতুন':        'new',
+  'সেল':          'sale',
+  'ট্রেন্ডিং':   'trending',
+  'লিমিটেড':     'limited',
+}
+
+export async function migrateBadgeKeys(req, res) {
+  try {
+    const products = await Product.find({ badgeKey: { $in: [null, ''] } })
+    let updated = 0
+    for (const p of products) {
+      const key = BADGE_BN_TO_KEY[p.badge?.bn]
+      if (key) {
+        p.badgeKey = key
+        await p.save()
+        updated++
+      }
+    }
+    res.json({ message: `${updated}টি প্রোডাক্টের badgeKey আপডেট হয়েছে`, updated })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}

@@ -4,7 +4,7 @@ import { api } from '../api.js'
 import { useLanguage } from '../context/LanguageContext.jsx'
 
 function formatDate(d) {
-  return new Date(d).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 function AuthBadge({ user }) {

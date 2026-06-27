@@ -9,12 +9,12 @@ import { api } from '../api.js'
 
 // প্রতিটি ব্যাজের bn/en ভ্যালু — Home.jsx এর ফিল্টারের সাথে মিলিয়ে রাখা হয়েছে
 const BADGE_OPTIONS = [
-  { key: '',            bn: null,            en: null,           label: 'কোনো ব্যাজ নেই' },
-  { key: 'bestseller',  bn: 'বেস্ট সেলার',  en: 'Best Seller',  label: '🏆 বেস্ট সেলার' },
-  { key: 'new',         bn: 'নতুন',          en: 'New Arrival',  label: '🆕 নতুন কালেকশন' },
-  { key: 'sale',        bn: 'সেল',           en: 'Sale',         label: '🔥 সেল' },
-  { key: 'trending',    bn: 'ট্রেন্ডিং',     en: 'Trending',     label: '📈 ট্রেন্ডিং' },
-  { key: 'limited',     bn: 'লিমিটেড',       en: 'Limited',      label: '⚡ লিমিটেড এডিশন' },
+  { key: '',            bn: null,            en: null,           label: 'No Badge' },
+  { key: 'bestseller',  bn: 'বেস্ট সেলার',  en: 'Best Seller',  label: '🏆 Best Seller' },
+  { key: 'new',         bn: 'নতুন',          en: 'New Arrival',  label: '🆕 New Arrival' },
+  { key: 'sale',        bn: 'সেল',           en: 'Sale',         label: '🔥 Sale' },
+  { key: 'trending',    bn: 'ট্রেন্ডিং',     en: 'Trending',     label: '📈 Trending' },
+  { key: 'limited',     bn: 'লিমিটেড',       en: 'Limited',      label: '⚡ Limited Edition' },
 ]
 
 const emptyForm = {
@@ -263,7 +263,7 @@ export default function AdminProducts() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-display text-2xl lg:text-3xl text-ink">{t('admin.productManagement')}</h1>
-          <p className="text-ink/60 text-sm mt-1">{list.length} {lang === 'bn' ? 'টি প্রোডাক্ট' : 'products'}</p>
+          <p className="text-ink/60 text-sm mt-1">{list.length} products</p>
         </div>
         <button
           onClick={openAddModal}
@@ -357,7 +357,7 @@ export default function AdminProducts() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">নাম (বাংলা) *</label>
+                  <label className="block text-sm font-medium text-ink mb-1.5">Name (Bengali) *</label>
                   <input name="nameBn" value={form.nameBn} onChange={handleChange} required
                     className="w-full bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
                 </div>
@@ -369,32 +369,32 @@ export default function AdminProducts() {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">ক্যাটাগরি</label>
+                  <label className="block text-sm font-medium text-ink mb-1.5">Category</label>
                   <select name="categoryKey" value={form.categoryKey} onChange={handleChange}
                     className="w-full bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40">
                     {categories.map((c) => <option key={c.key} value={c.key}>{lang === 'bn' ? c.name.bn : c.name.en}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">দাম (৳) *</label>
+                  <label className="block text-sm font-medium text-ink mb-1.5">Price (৳) *</label>
                   <input name="price" type="number" min="0" value={form.price} onChange={handleChange} required
                     className="w-full bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">স্টক *</label>
+                  <label className="block text-sm font-medium text-ink mb-1.5">Stock *</label>
                   <input name="stock" type="number" min="0" value={form.stock} onChange={handleChange} required
                     className="w-full bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1.5">পুরনো দাম (৳) — ঐচ্ছিক</label>
+                <label className="block text-sm font-medium text-ink mb-1.5">Original Price (৳) — optional</label>
                 <input name="oldPrice" type="number" min="0" value={form.oldPrice} onChange={handleChange}
-                  placeholder="কাটা দাম দেখাতে চাইলে দিন"
+                  placeholder="Enter to show a strikethrough price"
                   className="w-full bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1.5">প্রোডাক্ট ক্যাটাগরি ব্যাজ</label>
+                <label className="block text-sm font-medium text-ink mb-1.5">Product Badge</label>
                 <div className="grid grid-cols-3 gap-2">
                   {BADGE_OPTIONS.map((opt) => (
                     <button
@@ -413,7 +413,7 @@ export default function AdminProducts() {
                 </div>
                 {form.badgeKey && (
                   <p className="text-xs text-ink/40 mt-1.5">
-                    ব্যাজ: <span className="text-clay font-medium">{BADGE_OPTIONS.find(b => b.key === form.badgeKey)?.bn}</span> / <span className="text-clay font-medium">{BADGE_OPTIONS.find(b => b.key === form.badgeKey)?.en}</span>
+                    Badge: <span className="text-clay font-medium">{BADGE_OPTIONS.find(b => b.key === form.badgeKey)?.en}</span>
                   </p>
                 )}
               </div>
@@ -421,23 +421,23 @@ export default function AdminProducts() {
               {/* ━━━ ইমেজ সেকশন ━━━ */}
               <div>
                 <label className="block text-sm font-medium text-ink mb-2">
-                  প্রোডাক্টের ছবি
-                  <span className="ml-1.5 text-xs font-normal text-ink/40">({form.images.length} টি যোগ করা হয়েছে)</span>
+                  Product Images
+                  <span className="ml-1.5 text-xs font-normal text-ink/40">({form.images.length} added)</span>
                 </label>
 
                 {/* ট্যাব */}
                 <div className="flex border border-stone-dark rounded-md overflow-hidden mb-3">
                   <button type="button" onClick={() => setImgTab('url')}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors ${imgTab === 'url' ? 'bg-ink text-sand' : 'text-ink/60 hover:bg-stone/40'}`}>
-                    <LinkIcon size={13} /> লিংক
+                    <LinkIcon size={13} /> Link
                   </button>
                   <button type="button" onClick={() => setImgTab('upload')}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors ${imgTab === 'upload' ? 'bg-ink text-sand' : 'text-ink/60 hover:bg-stone/40'}`}>
-                    <Upload size={13} /> আপলোড
+                    <Upload size={13} /> Upload
                   </button>
                   <button type="button" onClick={() => setImgTab('drag')}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors ${imgTab === 'drag' ? 'bg-ink text-sand' : 'text-ink/60 hover:bg-stone/40'}`}>
-                    <Image size={13} /> ড্র্যাগ
+                    <Image size={13} /> Drag
                   </button>
                 </div>
 
@@ -454,11 +454,10 @@ export default function AdminProducts() {
                         className="flex-1 bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40"
                       />
                       <button type="button" onClick={addImageUrl}
-                        className="bg-ink text-sand px-3.5 py-2.5 rounded-md text-sm font-medium hover:bg-clay transition-colors shrink-0">
-                        যোগ
+                        className="bg-ink text-sand px-3.5 py-2.5 rounded-md text-sm font-medium hover:bg-clay transition-colors shrink-0">Add
                       </button>
                     </div>
-                    <p className="text-xs text-ink/40 mt-1">Enter চেপেও যোগ করা যাবে।</p>
+                    <p className="text-xs text-ink/40 mt-1">Press Enter to add.</p>
                   </div>
                 )}
 
@@ -525,25 +524,24 @@ export default function AdminProducts() {
                       <div key={idx} className="relative group rounded-lg overflow-hidden border border-stone-dark bg-stone/30 aspect-square">
                         <img
                           src={url}
-                          alt={`ছবি ${idx + 1}`}
+                          alt={`Image ${idx + 1}`}
                           className="w-full h-full object-cover"
                           onError={(e) => { e.target.style.display = 'none' }}
                         />
                         {idx === 0 && (
                           <span className="absolute top-1 left-1 bg-clay text-sand text-[9px] font-semibold px-1.5 py-0.5 rounded">
-                            মূল
+                            Main
                           </span>
                         )}
                         <div className="absolute inset-0 bg-ink/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
                           <div className="flex gap-1">
                             <button type="button" onClick={() => moveImage(idx, -1)} disabled={idx === 0}
-                              className="bg-sand/90 text-ink text-xs px-2 py-1 rounded disabled:opacity-30 hover:bg-sand" title="সামনে আনুন">←</button>
+                              className="bg-sand/90 text-ink text-xs px-2 py-1 rounded disabled:opacity-30 hover:bg-sand" title="Move forward">←</button>
                             <button type="button" onClick={() => moveImage(idx, 1)} disabled={idx === form.images.length - 1}
-                              className="bg-sand/90 text-ink text-xs px-2 py-1 rounded disabled:opacity-30 hover:bg-sand" title="পিছে নিন">→</button>
+                              className="bg-sand/90 text-ink text-xs px-2 py-1 rounded disabled:opacity-30 hover:bg-sand" title="Move back">→</button>
                           </div>
                           <button type="button" onClick={() => removeImage(idx)}
-                            className="bg-clay text-sand text-xs px-2.5 py-1 rounded hover:bg-clay-dark">
-                            মুছুন
+                            className="bg-clay text-sand text-xs px-2.5 py-1 rounded hover:bg-clay-dark">Remove
                           </button>
                         </div>
                       </div>
@@ -554,7 +552,7 @@ export default function AdminProducts() {
               {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
 
               <div>
-                <label className="block text-sm font-medium text-ink mb-1.5">বিবরণ (বাংলা)</label>
+                <label className="block text-sm font-medium text-ink mb-1.5">Description (Bengali)</label>
                 <textarea name="descriptionBn" rows={2} value={form.descriptionBn} onChange={handleChange}
                   className="w-full bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
               </div>
@@ -566,8 +564,7 @@ export default function AdminProducts() {
               {error && <p className="text-clay text-sm">{error}</p>}
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setModalOpen(false)}
-                  className="flex-1 border border-stone-dark text-ink py-2.5 rounded-md text-sm font-medium hover:bg-stone/40">
-                  বাতিল
+                  className="flex-1 border border-stone-dark text-ink py-2.5 rounded-md text-sm font-medium hover:bg-stone/40">Cancel
                 </button>
                 <button type="submit" disabled={saving || uploading}
                   className="flex-1 bg-clay text-sand py-2.5 rounded-md text-sm font-medium hover:bg-clay-dark disabled:opacity-60 flex items-center justify-center gap-2">
@@ -590,7 +587,7 @@ export default function AdminProducts() {
             <div className="flex gap-3">
               <button onClick={() => setDeleteTarget(null)}
                 className="flex-1 border border-stone-dark text-ink py-2.5 rounded-md text-sm font-medium hover:bg-stone/40">
-                বাতিল
+                Cancel
               </button>
               <button onClick={confirmDelete}
                 className="flex-1 bg-clay-dark text-sand py-2.5 rounded-md text-sm font-medium hover:bg-ink">

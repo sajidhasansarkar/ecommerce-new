@@ -9,7 +9,7 @@ import { useLanguage } from '../context/LanguageContext.jsx'
 import { useSiteSettings } from '../context/SiteSettingsContext.jsx'
 import { useCategories } from '../context/CategoryContext.jsx'
 
-const DEFAULT_MARQUEE = ['নতুন কালেকশন এসেছে', 'বিশেষ ছাড় চলছে', 'ফ্রি শিপিং ৳৫০০+ অর্ডারে', 'লিমিটেড এডিশন']
+const DEFAULT_MARQUEE = ['New collection arrived', 'Special discounts available', 'Free shipping on ৳500+ orders', 'Limited edition']
 
 function fileToDataUrl(file) {
   return new Promise((res, rej) => {
@@ -20,9 +20,7 @@ function fileToDataUrl(file) {
   })
 }
 
-// ছবি বড় হলে (সাইজ বা ডাইমেনশনে) ব্রাউজারেই resize+compress করে ছোট base64 বানায়,
-// যাতে সার্ভারে রিকোয়েস্ট পাঠানোর সময় "Unexpected token '<'..." (413 Payload Too Large) এরর না আসে।
-const MAX_DIMENSION = 1600       // px — এর বেশি বড় ছবি স্কেল ডাউন হবে
+// Resize and compress large images client-side before upload
 const TARGET_MAX_BYTES = 700_000 // ~700KB এর মধ্যে রাখার চেষ্টা করবে
 
 function loadImage(dataUrl) {
@@ -37,7 +35,7 @@ function loadImage(dataUrl) {
 async function compressImageFile(file) {
   const rawDataUrl = await fileToDataUrl(file)
 
-  // GIF (animation থাকতে পারে) compress না করে যেমন আছে তেমনই রাখি
+  // Skip compression for GIFs (may contain animation)
   if (file.type === 'image/gif') return rawDataUrl
 
   const img = await loadImage(rawDataUrl)
@@ -119,20 +117,18 @@ function ImagePicker({ label, value, onChange, aspect = 'aspect-video' }) {
 
   async function processFile(file) {
     if (!file.type.startsWith('image/')) {
-      setFileError('এটি একটি ছবি ফাইল না — অনুগ্রহ করে JPG/PNG/WebP/GIF ফাইল দিন')
+      setFileError('Please select an image file — JPG, PNG, WebP, or GIF')
       return
     }
     setFileError('')
     setProcessing(true)
     try {
       // ছবিটা প্রথমে কম্প্রেস করা হয় (বড় ছবি হলে ছোট করে), তারপর সেই কম্প্রেসড
-      // ছবিটা Cloudinary-তে (আমাদের ব্যাকএন্ডের মাধ্যমে) আপলোড করা হয়। Cloudinary থেকে পাওয়া
-      // সরাসরি লিংকটাই সেভ হয় — বড় base64 ডেটা ডাটাবেসে যায় না।
-      const dataUrl = await compressImageFile(file)
+      // Upload image to Cloudinary via backend. Store URL, not base64.
       const result = await api.upload.image(dataUrl, file.name)
       onChange(result.url)
     } catch (e) {
-      setFileError(e.message || 'ছবি প্রসেস করতে সমস্যা হয়েছে, আবার চেষ্টা করুন')
+      setFileError(e.message || 'Failed to process image, please try again')
     } finally {
       setProcessing(false)
     }
@@ -178,7 +174,7 @@ function ImagePicker({ label, value, onChange, aspect = 'aspect-video' }) {
           <button type="button" onClick={() => fileRef.current?.click()} disabled={processing}
             className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-stone-dark rounded-lg py-5 text-sm text-ink/60 hover:border-clay hover:text-clay transition-colors disabled:opacity-60">
             {processing ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-            {processing ? 'Cloudinary-তে আপলোড হচ্ছে…' : t('admin.chooseImage')}
+            {processing ? t('admin.uploadingCloudinary') : t('admin.chooseImage')}
           </button>
         </>
       )}
@@ -189,7 +185,7 @@ function ImagePicker({ label, value, onChange, aspect = 'aspect-video' }) {
             ? <Loader2 size={30} className="animate-spin text-clay" />
             : <ImageIcon size={30} className={dragOver ? 'text-clay' : 'text-ink/20'} />}
           <p className="text-sm font-medium">
-            {processing ? 'Cloudinary-তে আপলোড হচ্ছে…' : dragOver ? t('admin.dropHere') : t('admin.dragHere')}
+            {processing ? t('admin.uploadingCloudinary') : dragOver ? t('admin.dropHere') : t('admin.dragHere')}
           </p>
         </div>
       )}
@@ -323,7 +319,7 @@ function LivePreview({ heroSlider, categoryImages, promoBanner, marqueeItems }) 
 /* ——— Main ——— */
 export default function AdminSiteSettings() {
   const { t, lang } = useLanguage()
-  const { setLogoImage: setContextLogoImage, setLightImage: setContextLightImage } = useSiteSettings()
+  const { setLogoImage: setContextLogoImage } = useSiteSettings()
   const { categories } = useCategories()
   const [loading, setLoading]   = useState(true)
   const [saving, setSaving]     = useState(false)
@@ -337,7 +333,6 @@ export default function AdminSiteSettings() {
   const [promoBanner,   setPromoBanner]   = useState({ image: '', title: '', subtitle: '', link: '/shop' })
   const [marqueeItems,  setMarqueeItems]  = useState(DEFAULT_MARQUEE)
   const [newMarquee,    setNewMarquee]    = useState('')
-  const [lightImage,    setLightImage]    = useState('')
   const [logoImage,     setLogoImage]     = useState('')
 
   useEffect(() => {
@@ -357,7 +352,6 @@ export default function AdminSiteSettings() {
         setHeroSlider(s.heroSlider || [])
         setPromoBanner(s.promoBanner || { image: '', title: '', subtitle: '', link: '/shop' })
         setMarqueeItems(s.marqueeItems || DEFAULT_MARQUEE)
-        setLightImage(s.lightImage || '')
         setLogoImage(s.logoImage || '')
       })
       .catch(e => setError(e.message))
@@ -375,12 +369,10 @@ export default function AdminSiteSettings() {
         heroSlider,
         promoBanner,
         marqueeItems,
-        lightImage,
         logoImage,
       })
       setSuccess(true)
       setContextLogoImage(logoImage)
-      setContextLightImage(lightImage)
       setTimeout(() => setSuccess(false), 4000)
     } catch (e) { setError(e.message) }
     finally { setSaving(false) }
@@ -510,7 +502,7 @@ export default function AdminSiteSettings() {
           >
             {categories.length === 0 ? (
               <div className="py-4 text-center text-sm text-ink/40 border border-dashed border-stone-dark rounded-lg">
-                {lang === 'bn' ? 'আগে ক্যাটাগরি যোগ করুন' : 'Add categories first from the Categories section'}
+                {'Add categories first from the Categories section'}
               </div>
             ) : (
               <div className="space-y-6">
@@ -529,11 +521,11 @@ export default function AdminSiteSettings() {
                       <div className="flex items-center gap-2 mb-3">
                         {cat.icon && <span className="text-lg">{cat.icon}</span>}
                         <span className="font-medium text-sm text-ink">
-                          {lang === 'bn' ? cat.name.bn : cat.name.en}
+                          {cat.name.en}
                         </span>
                         <span className="text-xs text-ink/30 font-mono ml-1">({cat.key})</span>
                         {imgVal && (
-                          <span className="ml-auto text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ ছবি আছে</span>
+                          <span className="ml-auto text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ Image set</span>
                         )}
                       </div>
                       <ImagePicker
@@ -609,24 +601,6 @@ export default function AdminSiteSettings() {
               </div>
             )}
 
-            <div className="mt-6 pt-5 border-t border-stone-dark">
-              <p className="text-xs font-medium text-ink mb-1">{t('admin.lightImage')}</p>
-              <p className="text-xs text-ink/40 mb-3">{t('admin.lightImageDesc')}</p>
-              <ImagePicker
-                label={t('admin.addLightImage')}
-                value={lightImage}
-                onChange={setLightImage}
-                aspect="aspect-[4/1]"
-              />
-              {(lightImage || logoImage) && (
-                <div className="mt-3 p-3 bg-stone/40 rounded-lg border border-stone-dark">
-                  <p className="text-xs text-ink/40 mb-2">{t('admin.siteLogoPreviewNote')}</p>
-                  <div className="bg-[#1A1815] rounded-lg px-4 py-3 border border-stone-dark inline-flex items-center gap-2">
-                    <img src={lightImage || logoImage} alt="light logo preview" className="h-10 w-auto max-w-[160px] object-contain" onError={e => e.target.style.opacity='0.3'} />
-                  </div>
-                </div>
-              )}
-            </div>
           </AccordionSection>
         </div>
 
@@ -640,14 +614,14 @@ export default function AdminSiteSettings() {
               promoBanner={promoBanner}
               marqueeItems={marqueeItems}
             />
-            <p className="text-[10px] text-ink/30 text-center mt-2">↑ রিয়েল-টাইম প্রিভিউ</p>
+            <p className="text-[10px] text-ink/30 text-center mt-2">↑ Real-time preview</p>
           </div>
         )}
       </div>
 
       {/* Save Button */}
       <div className="mt-8 pt-6 border-t border-stone-dark flex items-center justify-between">
-        <p className="text-xs text-ink/40">সব পরিবর্তন একসাথে সেভ হবে</p>
+        <p className="text-xs text-ink/40">All changes save together</p>
         <button onClick={handleSave} disabled={saving}
           className="flex items-center gap-2 bg-clay text-sand px-6 py-3 rounded-lg font-medium hover:bg-clay-dark disabled:opacity-60 transition-colors shadow-sm">
           {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}

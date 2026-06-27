@@ -6,6 +6,23 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { CheckCircle2, UserCheck } from 'lucide-react'
 import { api } from '../api.js'
 
+/* ─── Delivery charge helper ─── */
+function calcShipping(subtotal, promotions) {
+  if (!promotions) {
+    // fallback to old hardcoded logic
+    return subtotal >= 1500 || subtotal === 0 ? 0 : 80
+  }
+  const {
+    deliveryEnabled = true,
+    deliveryCharge = 80,
+    freeDeliveryEnabled = true,
+    freeDeliveryThreshold = 1500,
+  } = promotions
+  if (!deliveryEnabled || subtotal === 0) return 0
+  if (freeDeliveryEnabled && subtotal >= freeDeliveryThreshold) return 0
+  return deliveryCharge
+}
+
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart()
   const { t } = useLanguage()
@@ -25,6 +42,13 @@ export default function Checkout() {
   const [submitError, setSubmitError] = useState('')
   const [placed, setPlaced] = useState(false)
   const [orderId, setOrderId] = useState(null)
+  const [promotions, setPromotions] = useState(null)
+
+  useEffect(() => {
+    api.settings.get()
+      .then((s) => setPromotions(s.promotions || null))
+      .catch(() => {})
+  }, [])
 
   // Auto-fill form from logged-in user's profile data
   useEffect(() => {
@@ -43,7 +67,7 @@ export default function Checkout() {
     }
   }, [user])
 
-  const shipping = subtotal >= 1500 || subtotal === 0 ? 0 : 80
+  const shipping = calcShipping(subtotal, promotions)
   const total = subtotal + shipping
 
   function handleChange(e) {
