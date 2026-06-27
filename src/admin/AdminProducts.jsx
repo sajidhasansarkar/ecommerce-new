@@ -49,6 +49,8 @@ export default function AdminProducts() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [imgTab, setImgTab] = useState('url') // 'url' | 'upload' | 'drag'
   const [dragOver, setDragOver] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
   const fileInputRef = useRef(null)
 
   async function loadProducts() {
@@ -69,6 +71,7 @@ export default function AdminProducts() {
     setForm(emptyForm)
     setEditingId(null)
     setImgTab('url')
+    setUploadError('')
     setModalOpen(true)
   }
 
@@ -88,6 +91,7 @@ export default function AdminProducts() {
     })
     setEditingId(product._id)
     setImgTab('url')
+    setUploadError('')
     setModalOpen(true)
   }
 
@@ -118,14 +122,26 @@ export default function AdminProducts() {
     const filtered = Array.from(files).filter((f) => validTypes.includes(f.type))
     if (filtered.length === 0) return
 
+    setUploading(true)
+    setUploadError('')
     try {
+      // প্রতিটা ফাইলকে আগে base64 এ কনভার্ট করে, তারপর imgbb-তে (আমাদের ব্যাকএন্ডের
+      // মাধ্যমে) আপলোড করা হয়। imgbb থেকে পাওয়া সরাসরি লিংকটাই ফর্মে যোগ হবে —
+      // base64 ডেটা ডাটাবেসে সেভ হয় না।
       const dataUrls = await Promise.all(filtered.map(fileToDataUrl))
+      const uploaded = []
+      for (let i = 0; i < dataUrls.length; i++) {
+        const result = await api.upload.image(dataUrls[i], filtered[i].name)
+        uploaded.push(result.url)
+      }
       setForm((f) => ({
         ...f,
-        images: [...f.images, ...dataUrls.filter((u) => !f.images.includes(u))],
+        images: [...f.images, ...uploaded.filter((u) => !f.images.includes(u))],
       }))
     } catch (e) {
-      setError('ছবি প্রসেস করতে সমস্যা হয়েছে')
+      setUploadError(e.message || 'ছবি আপলোড করতে সমস্যা হয়েছে')
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -137,8 +153,9 @@ export default function AdminProducts() {
   const handleDrop = useCallback((e) => {
     e.preventDefault()
     setDragOver(false)
+    if (uploading) return
     processFiles(e.dataTransfer.files)
-  }, [])
+  }, [uploading])
 
   const handleDragOver = useCallback((e) => {
     e.preventDefault()
@@ -424,16 +441,19 @@ export default function AdminProducts() {
                       accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
                       multiple
                       className="hidden"
+                      disabled={uploading}
                       onChange={handleFileInput}
                     />
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-stone-dark rounded-md py-4 text-sm text-ink/60 hover:border-clay hover:text-clay transition-colors"
+                      disabled={uploading}
+                      className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-stone-dark rounded-md py-4 text-sm text-ink/60 hover:border-clay hover:text-clay transition-colors disabled:opacity-60"
                     >
-                      <Upload size={18} /> ছবি বেছে নিন (JPG, PNG, WEBP)
+                      {uploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+                      {uploading ? 'imgbb-তে আপলোড হচ্ছে...' : 'ছবি বেছে নিন (JPG, PNG, WEBP)'}
                     </button>
-                    <p className="text-xs text-ink/40 mt-1">একসাথে একাধিক ছবি সিলেক্ট করা যাবে।</p>
+                    <p className="text-xs text-ink/40 mt-1">একসাথে একাধিক ছবি সিলেক্ট করা যাবে। ছবি imgbb-তে আপলোড হয়ে লিংক স্বয়ংক্রিয়ভাবে যুক্ত হবে।</p>
                   </div>
                 )}
 
@@ -444,13 +464,28 @@ export default function AdminProducts() {
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     className={`w-full border-2 border-dashed rounded-md py-8 flex flex-col items-center justify-center gap-2 transition-colors ${
+                      uploading ? 'opacity-60 pointer-events-none' : ''
+                    } ${
                       dragOver ? 'border-clay bg-clay/5 text-clay' : 'border-stone-dark text-ink/50 hover:border-clay/50'
                     }`}
                   >
-                    <Image size={28} className={dragOver ? 'text-clay' : 'text-ink/30'} />
-                    <p className="text-sm font-medium">{dragOver ? 'এখানে ছেড়ে দিন!' : 'ছবি এখানে টেনে আনুন'}</p>
-                    <p className="text-xs">JPG, PNG, WEBP সাপোর্টেড</p>
+                    {uploading ? (
+                      <>
+                        <Loader2 size={28} className="animate-spin text-clay" />
+                        <p className="text-sm font-medium">imgbb-তে আপলোড হচ্ছে...</p>
+                      </>
+                    ) : (
+                      <>
+                        <Image size={28} className={dragOver ? 'text-clay' : 'text-ink/30'} />
+                        <p className="text-sm font-medium">{dragOver ? 'এখানে ছেড়ে দিন!' : 'ছবি এখানে টেনে আনুন'}</p>
+                        <p className="text-xs">JPG, PNG, WEBP সাপোর্টেড</p>
+                      </>
+                    )}
                   </div>
+                )}
+
+                {uploadError && (
+                  <p className="text-xs text-clay mt-2">⚠️ {uploadError}</p>
                 )}
 
                 {/* প্রিভিউ গ্রিড */}
@@ -504,7 +539,7 @@ export default function AdminProducts() {
                   className="flex-1 border border-stone-dark text-ink py-2.5 rounded-md text-sm font-medium hover:bg-stone/40">
                   বাতিল
                 </button>
-                <button type="submit" disabled={saving}
+                <button type="submit" disabled={saving || uploading}
                   className="flex-1 bg-clay text-sand py-2.5 rounded-md text-sm font-medium hover:bg-clay-dark disabled:opacity-60 flex items-center justify-center gap-2">
                   {saving && <Loader2 size={14} className="animate-spin" />}
                   {editingId ? t('admin.update') : t('admin.add')}

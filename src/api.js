@@ -79,4 +79,9 @@ export const api = {
     get: () => request('GET', '/api/settings'),
     update: (data) => request('PUT', '/api/settings', data),
   },
+  upload: {
+    // dataUrlOrBase64: ফাইল থেকে পাওয়া base64 ডেটা URL (যেমন "data:image/png;base64,...")
+    // রিটার্ন করে: { url, thumbUrl, displayUrl, ... } — url টাই ডাটাবেসে সেভ করার জন্য ব্যবহার করুন
+    image: (dataUrlOrBase64, name) => request('POST', '/api/upload', { image: dataUrlOrBase64, name }),
+  },
 }

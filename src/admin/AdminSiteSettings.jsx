@@ -125,10 +125,14 @@ function ImagePicker({ label, value, onChange, aspect = 'aspect-video' }) {
     setFileError('')
     setProcessing(true)
     try {
+      // ছবিটা প্রথমে কম্প্রেস করা হয় (বড় ছবি হলে ছোট করে), তারপর সেই কম্প্রেসড
+      // ছবিটা imgbb-তে (আমাদের ব্যাকএন্ডের মাধ্যমে) আপলোড করা হয়। imgbb থেকে পাওয়া
+      // সরাসরি লিংকটাই সেভ হয় — বড় base64 ডেটা ডাটাবেসে যায় না।
       const dataUrl = await compressImageFile(file)
-      onChange(dataUrl)
+      const result = await api.upload.image(dataUrl, file.name)
+      onChange(result.url)
     } catch (e) {
-      setFileError('ছবি প্রসেস করতে সমস্যা হয়েছে, আবার চেষ্টা করুন')
+      setFileError(e.message || 'ছবি প্রসেস করতে সমস্যা হয়েছে, আবার চেষ্টা করুন')
     } finally {
       setProcessing(false)
     }
@@ -136,8 +140,9 @@ function ImagePicker({ label, value, onChange, aspect = 'aspect-video' }) {
 
   const handleDrop = useCallback((e) => {
     e.preventDefault(); setDragOver(false)
+    if (processing) return
     const f = e.dataTransfer.files[0]; if (f) processFile(f)
-  }, [])
+  }, [processing])
 
   return (
     <div className="space-y-3">
@@ -173,7 +178,7 @@ function ImagePicker({ label, value, onChange, aspect = 'aspect-video' }) {
           <button type="button" onClick={() => fileRef.current?.click()} disabled={processing}
             className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-stone-dark rounded-lg py-5 text-sm text-ink/60 hover:border-clay hover:text-clay transition-colors disabled:opacity-60">
             {processing ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-            {processing ? 'ছবি প্রসেস হচ্ছে…' : t('admin.chooseImage')}
+            {processing ? 'imgbb-তে আপলোড হচ্ছে…' : t('admin.chooseImage')}
           </button>
         </>
       )}
@@ -184,7 +189,7 @@ function ImagePicker({ label, value, onChange, aspect = 'aspect-video' }) {
             ? <Loader2 size={30} className="animate-spin text-clay" />
             : <ImageIcon size={30} className={dragOver ? 'text-clay' : 'text-ink/20'} />}
           <p className="text-sm font-medium">
-            {processing ? 'ছবি প্রসেস হচ্ছে…' : dragOver ? t('admin.dropHere') : t('admin.dragHere')}
+            {processing ? 'imgbb-তে আপলোড হচ্ছে…' : dragOver ? t('admin.dropHere') : t('admin.dragHere')}
           </p>
         </div>
       )}
