@@ -15,13 +15,17 @@ function Switch({ enabled, onChange }) {
       type="button"
       onClick={() => onChange(!enabled)}
       aria-pressed={enabled}
-      className={`relative shrink-0 inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-clay/40 ${
-        enabled ? 'bg-clay' : 'bg-stone-dark/60'
-      }`}
+      style={{ backgroundColor: enabled ? '#C75D3C' : '#c8bfb0', width: 56, height: 28, borderRadius: 999, padding: 0, border: 'none', position: 'relative', cursor: 'pointer', transition: 'background-color 0.3s', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}
     >
-      <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200 ${
-        enabled ? 'translate-x-[18px]' : 'translate-x-0.5'
-      }`} />
+      <span style={{
+        display: 'inline-block',
+        width: 24, height: 24,
+        borderRadius: '50%',
+        backgroundColor: 'white',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+        transform: enabled ? 'translateX(30px)' : 'translateX(2px)',
+        transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+      }} />
     </button>
   )
 }
@@ -192,13 +196,17 @@ function DiscountRuleCard({ rule, onChange, onDelete, categories, index }) {
                   type="button"
                   onClick={() => onChange({ ...rule, type: rule.type === 'percent' ? 'flat' : 'percent' })}
                   aria-pressed={rule.type === 'flat'}
-                  className={`relative shrink-0 inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-clay/40 ${
-                    rule.type === 'flat' ? 'bg-clay' : 'bg-stone-dark/60'
-                  }`}
+                  style={{ backgroundColor: rule.type === 'flat' ? '#C75D3C' : '#c8bfb0', width: 56, height: 28, borderRadius: 999, padding: 0, border: 'none', position: 'relative', cursor: 'pointer', transition: 'background-color 0.3s', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}
                 >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 ${
-                    rule.type === 'flat' ? 'translate-x-[22px]' : 'translate-x-1'
-                  }`} />
+                  <span style={{
+                    display: 'inline-block',
+                    width: 24, height: 24,
+                    borderRadius: '50%',
+                    backgroundColor: 'white',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                    transform: rule.type === 'flat' ? 'translateX(30px)' : 'translateX(2px)',
+                    transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+                  }} />
                 </button>
                 <span className={`text-sm font-medium transition-colors ${rule.type === 'flat' ? 'text-ink' : 'text-ink/35'}`}>৳ Off</span>
               </div>
