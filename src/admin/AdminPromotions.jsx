@@ -7,7 +7,7 @@ import { api } from '../api.js'
 import { useCategories } from '../context/CategoryContext.jsx'
 
 /* ══════════════════════════════════════════
-   Switch — standard small pill toggle
+   Switch — modern pill with glow effect
 ══════════════════════════════════════════ */
 function Switch({ enabled, onChange }) {
   return (
@@ -15,16 +15,35 @@ function Switch({ enabled, onChange }) {
       type="button"
       onClick={() => onChange(!enabled)}
       aria-pressed={enabled}
-      style={{ backgroundColor: enabled ? '#C75D3C' : '#c8bfb0', width: 56, height: 28, borderRadius: 999, padding: 0, border: 'none', position: 'relative', cursor: 'pointer', transition: 'background-color 0.3s', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}
+      style={{
+        position: 'relative',
+        width: 52,
+        height: 26,
+        borderRadius: 999,
+        border: 'none',
+        cursor: 'pointer',
+        padding: 0,
+        flexShrink: 0,
+        outline: 'none',
+        background: enabled
+          ? 'linear-gradient(135deg, #C75D3C, #e07a5f)'
+          : '#d4ccc4',
+        boxShadow: enabled
+          ? '0 0 0 3px rgba(199,93,60,0.18), inset 0 1px 2px rgba(0,0,0,0.1)'
+          : 'inset 0 1px 3px rgba(0,0,0,0.15)',
+        transition: 'background 0.3s, box-shadow 0.3s',
+      }}
     >
       <span style={{
-        display: 'inline-block',
-        width: 24, height: 24,
+        position: 'absolute',
+        top: 3,
+        left: enabled ? 'calc(100% - 23px)' : 3,
+        width: 20,
+        height: 20,
         borderRadius: '50%',
-        backgroundColor: 'white',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
-        transform: enabled ? 'translateX(30px)' : 'translateX(2px)',
-        transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+        background: '#fff',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.22)',
+        transition: 'left 0.28s cubic-bezier(0.4,0,0.2,1)',
       }} />
     </button>
   )
@@ -187,28 +206,40 @@ function DiscountRuleCard({ rule, onChange, onDelete, categories, index }) {
         {/* Row 1: Enable + Discount type + Value */}
         <div className="grid grid-cols-[1fr_auto] gap-4 items-start">
           <div className="grid sm:grid-cols-2 gap-3">
-            {/* Discount type — smart toggle */}
+            {/* Discount type — segmented control */}
             <div>
               <label className="block text-xs font-medium text-ink/60 mb-1.5">Discount Type</label>
-              <div className="flex items-center gap-3 h-10">
-                <span className={`text-sm font-medium transition-colors ${rule.type === 'percent' ? 'text-ink' : 'text-ink/35'}`}>% Off</span>
-                <button
-                  type="button"
-                  onClick={() => onChange({ ...rule, type: rule.type === 'percent' ? 'flat' : 'percent' })}
-                  aria-pressed={rule.type === 'flat'}
-                  style={{ backgroundColor: rule.type === 'flat' ? '#C75D3C' : '#c8bfb0', width: 56, height: 28, borderRadius: 999, padding: 0, border: 'none', position: 'relative', cursor: 'pointer', transition: 'background-color 0.3s', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}
-                >
-                  <span style={{
-                    display: 'inline-block',
-                    width: 24, height: 24,
-                    borderRadius: '50%',
-                    backgroundColor: 'white',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
-                    transform: rule.type === 'flat' ? 'translateX(30px)' : 'translateX(2px)',
-                    transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
-                  }} />
-                </button>
-                <span className={`text-sm font-medium transition-colors ${rule.type === 'flat' ? 'text-ink' : 'text-ink/35'}`}>৳ Off</span>
+              <div style={{
+                display: 'inline-flex',
+                background: '#e8e2da',
+                borderRadius: 10,
+                padding: 3,
+                gap: 3,
+              }}>
+                {[{ val: 'percent', icon: '%', label: '% Off' }, { val: 'flat', icon: '৳', label: '৳ Off' }].map(opt => (
+                  <button
+                    key={opt.val}
+                    type="button"
+                    onClick={() => onChange({ ...rule, type: opt.val })}
+                    style={{
+                      padding: '5px 14px',
+                      borderRadius: 7,
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      fontWeight: rule.type === opt.val ? 600 : 400,
+                      background: rule.type === opt.val
+                        ? 'linear-gradient(135deg, #C75D3C, #e07a5f)'
+                        : 'transparent',
+                      color: rule.type === opt.val ? '#fff' : '#6b5f57',
+                      boxShadow: rule.type === opt.val ? '0 1px 4px rgba(199,93,60,0.3)' : 'none',
+                      transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
 

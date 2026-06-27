@@ -146,8 +146,7 @@ function ImagePicker({ label, value, onChange, aspect = 'aspect-video' }) {
       <div className="flex border border-stone-dark rounded-lg overflow-hidden w-fit bg-stone/30">
         {[
           { key: 'url',    icon: LinkIcon, text: t('admin.linkTab') },
-          { key: 'upload', icon: Upload,   text: t('admin.uploadTab') },
-          { key: 'drag',   icon: Image,    text: t('admin.dragTab') },
+          { key: 'upload', icon: Upload,   text: 'Upload / Drag' },
         ].map(({ key, icon: Icon, text }) => (
           <button key={key} type="button" onClick={() => setTab(key)}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${tab === key ? 'bg-ink text-sand' : 'text-ink/60 hover:bg-stone/60'}`}>
@@ -171,23 +170,42 @@ function ImagePicker({ label, value, onChange, aspect = 'aspect-video' }) {
         <>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" disabled={processing}
             onChange={async e => { if (e.target.files[0]) await processFile(e.target.files[0]); e.target.value = '' }} />
-          <button type="button" onClick={() => fileRef.current?.click()} disabled={processing}
-            className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-stone-dark rounded-lg py-5 text-sm text-ink/60 hover:border-clay hover:text-clay transition-colors disabled:opacity-60">
-            {processing ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-            {processing ? t('admin.uploadingCloudinary') : t('admin.chooseImage')}
-          </button>
+          <div
+            onDrop={handleDrop}
+            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onClick={() => !processing && fileRef.current?.click()}
+            className={`w-full border-2 border-dashed rounded-lg py-8 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer select-none ${
+              processing ? 'opacity-60 pointer-events-none' : ''
+            } ${
+              dragOver
+                ? 'border-clay bg-clay/5 text-clay scale-[1.01]'
+                : 'border-stone-dark text-ink/50 hover:border-clay hover:bg-clay/3 hover:text-clay'
+            }`}
+          >
+            {processing ? (
+              <>
+                <Loader2 size={30} className="animate-spin text-clay" />
+                <p className="text-sm font-medium">{t('admin.uploadingCloudinary')}</p>
+              </>
+            ) : dragOver ? (
+              <>
+                <ImageIcon size={30} className="text-clay" />
+                <p className="text-sm font-semibold">Drop to upload</p>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 mb-1">
+                  <Upload size={22} className="text-ink/30" />
+                  <span className="text-ink/20 text-lg font-light">|</span>
+                  <ImageIcon size={22} className="text-ink/30" />
+                </div>
+                <p className="text-sm font-medium">Click to browse  ·  or drag & drop here</p>
+                <p className="text-xs text-ink/40">JPG, PNG, WebP supported</p>
+              </>
+            )}
+          </div>
         </>
-      )}
-      {tab === 'drag' && (
-        <div onDrop={handleDrop} onDragOver={e => { e.preventDefault(); setDragOver(true) }} onDragLeave={() => setDragOver(false)}
-          className={`w-full border-2 border-dashed rounded-lg py-5 flex flex-col items-center justify-center gap-2 transition-colors ${dragOver ? 'border-clay bg-clay/5 text-clay' : 'border-stone-dark text-ink/50'}`}>
-          {processing
-            ? <Loader2 size={30} className="animate-spin text-clay" />
-            : <ImageIcon size={30} className={dragOver ? 'text-clay' : 'text-ink/20'} />}
-          <p className="text-sm font-medium">
-            {processing ? t('admin.uploadingCloudinary') : dragOver ? t('admin.dropHere') : t('admin.dragHere')}
-          </p>
-        </div>
       )}
       {fileError && (
         <p className="text-xs text-clay flex items-center gap-1.5">⚠️ {fileError}</p>

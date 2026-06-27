@@ -388,11 +388,16 @@ export default function AdminProducts() {
                       const cat = categories.find(c => c.key === p.categoryKey)
                       return cat ? cat.name.en : p.categoryKey
                     })()}</span>
-                    {p.badge?.bn && (
-                      <span className="ml-2 inline-block bg-clay/10 text-clay text-[10px] font-semibold px-1.5 py-0.5 rounded">
-                        {p.badge.bn}
-                      </span>
-                    )}
+                    {(p.badge?.en || p.badgeKey) && (() => {
+                      const label = p.badge?.en
+                        || BADGE_OPTIONS.find(b => b.key === p.badgeKey)?.en
+                        || null
+                      return label ? (
+                        <span className="ml-2 inline-block bg-clay/10 text-clay text-[10px] font-semibold px-1.5 py-0.5 rounded">
+                          {label}
+                        </span>
+                      ) : null
+                    })()}
                   </td>
                   <td className="px-4 py-3 font-mono text-ink">
                     <div>৳{p.price}</div>
@@ -490,9 +495,36 @@ export default function AdminProducts() {
                       hasSizes: !f.hasSizes,
                       sizeVariants: !f.hasSizes && f.sizeVariants.length === 0 ? [{ size: '', stock: '' }] : f.sizeVariants,
                     }))}
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${form.hasSizes ? 'bg-clay' : 'bg-stone-dark'}`}
+                    style={{
+                      position: 'relative',
+                      width: 52,
+                      height: 26,
+                      borderRadius: 999,
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                      flexShrink: 0,
+                      outline: 'none',
+                      background: form.hasSizes
+                        ? 'linear-gradient(135deg, #C75D3C, #e07a5f)'
+                        : '#d4ccc4',
+                      boxShadow: form.hasSizes
+                        ? '0 0 0 3px rgba(199,93,60,0.18), inset 0 1px 2px rgba(0,0,0,0.1)'
+                        : 'inset 0 1px 3px rgba(0,0,0,0.15)',
+                      transition: 'background 0.3s, box-shadow 0.3s',
+                    }}
                   >
-                    <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-sand transition-transform ${form.hasSizes ? 'translate-x-4' : 'translate-x-1'}`} />
+                    <span style={{
+                      position: 'absolute',
+                      top: 3,
+                      left: form.hasSizes ? 'calc(100% - 23px)' : 3,
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      background: '#fff',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.22)',
+                      transition: 'left 0.28s cubic-bezier(0.4,0,0.2,1)',
+                    }} />
                   </button>
                 </div>
 
@@ -626,7 +658,7 @@ export default function AdminProducts() {
                   <span className="ml-1.5 text-xs font-normal text-ink/40">({form.images.length} added)</span>
                 </label>
 
-                {/* ট্যাব */}
+                {/* ── Tab: URL link ── */}
                 <div className="flex border border-stone-dark rounded-md overflow-hidden mb-3">
                   <button type="button" onClick={() => setImgTab('url')}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors ${imgTab === 'url' ? 'bg-ink text-sand' : 'text-ink/60 hover:bg-stone/40'}`}>
@@ -634,15 +666,11 @@ export default function AdminProducts() {
                   </button>
                   <button type="button" onClick={() => setImgTab('upload')}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors ${imgTab === 'upload' ? 'bg-ink text-sand' : 'text-ink/60 hover:bg-stone/40'}`}>
-                    <Upload size={13} /> Upload
-                  </button>
-                  <button type="button" onClick={() => setImgTab('drag')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors ${imgTab === 'drag' ? 'bg-ink text-sand' : 'text-ink/60 hover:bg-stone/40'}`}>
-                    <Image size={13} /> Drag
+                    <Upload size={13} /> Upload / Drag
                   </button>
                 </div>
 
-                {/* URL ট্যাব */}
+                {/* URL tab */}
                 {imgTab === 'url' && (
                   <div>
                     <div className="flex gap-2">
@@ -662,7 +690,7 @@ export default function AdminProducts() {
                   </div>
                 )}
 
-                {/* আপলোড ট্যাব */}
+                {/* Combined Upload + Drag zone */}
                 {imgTab === 'upload' && (
                   <div>
                     <input
@@ -674,43 +702,41 @@ export default function AdminProducts() {
                       disabled={uploading}
                       onChange={handleFileInput}
                     />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-stone-dark rounded-md py-4 text-sm text-ink/60 hover:border-clay hover:text-clay transition-colors disabled:opacity-60"
+                    <div
+                      onDrop={handleDrop}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onClick={() => !uploading && fileInputRef.current?.click()}
+                      className={`w-full border-2 border-dashed rounded-lg py-8 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer select-none ${
+                        uploading ? 'opacity-60 pointer-events-none' : ''
+                      } ${
+                        dragOver
+                          ? 'border-clay bg-clay/5 text-clay scale-[1.01]'
+                          : 'border-stone-dark text-ink/50 hover:border-clay hover:bg-clay/3 hover:text-clay'
+                      }`}
                     >
-                      {uploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-                      {uploading ? t("admin.uploadingCloudinary") : t("admin.chooseImageBtn")}
-                    </button>
-                    <p className="text-xs text-ink/40 mt-1">{t("admin.uploadHint")}</p>
-                  </div>
-                )}
-
-                {/* ড্র্যাগ ও ড্রপ ট্যাব */}
-                {imgTab === 'drag' && (
-                  <div
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    className={`w-full border-2 border-dashed rounded-md py-8 flex flex-col items-center justify-center gap-2 transition-colors ${
-                      uploading ? 'opacity-60 pointer-events-none' : ''
-                    } ${
-                      dragOver ? 'border-clay bg-clay/5 text-clay' : 'border-stone-dark text-ink/50 hover:border-clay/50'
-                    }`}
-                  >
-                    {uploading ? (
-                      <>
-                        <Loader2 size={28} className="animate-spin text-clay" />
-                        <p className="text-sm font-medium">{t("admin.uploadingCloudinary")}</p>
-                      </>
-                    ) : (
-                      <>
-                        <Image size={28} className={dragOver ? 'text-clay' : 'text-ink/30'} />
-                        <p className="text-sm font-medium">{dragOver ? t("admin.dropHere") : t("admin.dragHere")}</p>
-                        <p className="text-xs">{t("admin.dragDropHint")}</p>
-                      </>
-                    )}
+                      {uploading ? (
+                        <>
+                          <Loader2 size={30} className="animate-spin text-clay" />
+                          <p className="text-sm font-medium">{t("admin.uploadingCloudinary")}</p>
+                        </>
+                      ) : dragOver ? (
+                        <>
+                          <Image size={30} className="text-clay" />
+                          <p className="text-sm font-semibold">Drop to upload</p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-3 mb-1">
+                            <Upload size={22} className="text-ink/30" />
+                            <span className="text-ink/20 text-lg font-light">|</span>
+                            <Image size={22} className="text-ink/30" />
+                          </div>
+                          <p className="text-sm font-medium">Click to browse  ·  or drag & drop here</p>
+                          <p className="text-xs text-ink/40">{t("admin.uploadHint")}</p>
+                        </>
+                      )}
+                    </div>
                   </div>
                 )}
 
