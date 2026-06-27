@@ -379,11 +379,33 @@ export default function AdminSiteSettings() {
   }
 
   if (loading) return (
-    <div className="max-w-5xl space-y-4 animate-pulse">
-      <div className="h-8 w-48 bg-stone rounded-lg" />
-      <div className="h-4 w-72 bg-stone rounded" />
-      {[...Array(4)].map((_, i) => (
-        <div key={i} className="h-16 bg-stone rounded-xl border border-stone-dark" />
+    <div className="max-w-5xl animate-pulse">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <div className="h-8 w-44 bg-stone rounded-lg mb-2" />
+          <div className="h-4 w-64 bg-stone rounded" />
+        </div>
+        <div className="h-9 w-32 bg-stone rounded-lg" />
+      </div>
+      {/* Accordion items */}
+      {[
+        { w: 'w-32', dw: 'w-48' },
+        { w: 'w-24', dw: 'w-56' },
+        { w: 'w-36', dw: 'w-40' },
+        { w: 'w-28', dw: 'w-52' },
+        { w: 'w-20', dw: 'w-36' },
+      ].map(({ w, dw }, i) => (
+        <div key={i} className="rounded-xl border border-stone-dark overflow-hidden mb-3">
+          <div className="flex items-center gap-3 px-5 py-4 bg-stone/30">
+            <div className="w-8 h-8 rounded-lg bg-stone shrink-0" />
+            <div className="flex-1">
+              <div className={`h-4 ${w} bg-stone rounded mb-1.5`} />
+              <div className={`h-3 ${dw} bg-stone rounded`} />
+            </div>
+            <div className="w-4 h-4 bg-stone rounded" />
+          </div>
+        </div>
       ))}
     </div>
   )

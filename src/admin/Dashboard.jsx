@@ -47,7 +47,48 @@ export default function Dashboard() {
     load()
   }, [])
 
-  if (loading) return <div className="text-ink/50 py-10 text-center">{t('admin.dashboardLoading')}</div>
+  if (loading) return (
+    <div className="animate-pulse">
+      {/* Header */}
+      <div className="h-8 w-40 bg-stone rounded-lg mb-2" />
+      <div className="h-4 w-64 bg-stone rounded mb-8" />
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="bg-sand rounded-xl p-5 border border-stone-dark">
+            <div className="w-6 h-6 bg-stone rounded mb-3" />
+            <div className="h-7 w-16 bg-stone rounded mb-2" />
+            <div className="h-3 w-24 bg-stone rounded" />
+          </div>
+        ))}
+      </div>
+      {/* Low stock panel */}
+      <div className="bg-sand rounded-xl border border-stone-dark p-5 mb-6">
+        <div className="h-5 w-36 bg-stone rounded mb-4" />
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="flex items-center justify-between py-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded bg-stone shrink-0" />
+              <div className="h-4 w-32 bg-stone rounded" />
+            </div>
+            <div className="h-4 w-16 bg-stone rounded" />
+          </div>
+        ))}
+      </div>
+      {/* Recent orders panel */}
+      <div className="bg-sand rounded-xl border border-stone-dark p-5">
+        <div className="h-5 w-36 bg-stone rounded mb-4" />
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="flex items-center justify-between py-3 border-t border-stone-dark">
+            <div className="h-4 w-24 bg-stone rounded" />
+            <div className="h-4 w-28 bg-stone rounded" />
+            <div className="h-4 w-16 bg-stone rounded" />
+            <div className="h-6 w-20 bg-stone rounded-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
   if (error) return <div className="text-clay py-10 text-center">{error}</div>
 
   const totalStock = products.reduce((sum, p) => sum + p.stock, 0)

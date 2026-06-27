@@ -122,7 +122,51 @@ export default function AdminCustomers() {
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
       {loading ? (
-        <div className="text-ink/50 py-10 text-center">{t('common.loading')}</div>
+        <div className="animate-pulse">
+          {/* Desktop table skeleton */}
+          <div className="hidden md:block bg-sand rounded-xl border border-stone-dark overflow-hidden">
+            <div className="flex items-center gap-6 px-4 py-3 bg-stone/50 border-b border-stone-dark">
+              <div className="h-3 w-24 bg-stone-dark/60 rounded" />
+              <div className="h-3 w-20 bg-stone-dark/60 rounded" />
+              <div className="h-3 w-24 bg-stone-dark/60 rounded" />
+              <div className="h-3 w-12 bg-stone-dark/60 rounded" />
+              <div className="h-3 w-20 bg-stone-dark/60 rounded" />
+            </div>
+            {[...Array(7)].map((_, i) => (
+              <div key={i} className="flex items-center gap-6 px-4 py-3.5 border-t border-stone-dark">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-9 h-9 rounded-full bg-stone shrink-0" />
+                  <div>
+                    <div className="h-4 w-28 bg-stone rounded mb-1.5" />
+                    <div className="h-3 w-36 bg-stone rounded" />
+                  </div>
+                </div>
+                <div>
+                  <div className="h-3 w-32 bg-stone rounded mb-1.5" />
+                  <div className="h-3 w-24 bg-stone rounded" />
+                </div>
+                <div className="h-5 w-16 bg-stone rounded-full" />
+                <div className="h-5 w-14 bg-stone rounded-full" />
+                <div className="h-3 w-20 bg-stone rounded" />
+              </div>
+            ))}
+          </div>
+          {/* Mobile card skeleton */}
+          <div className="md:hidden space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="bg-sand rounded-xl border border-stone-dark p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-stone shrink-0" />
+                  <div>
+                    <div className="h-4 w-28 bg-stone rounded mb-1.5" />
+                    <div className="h-3 w-20 bg-stone rounded" />
+                  </div>
+                </div>
+                <div className="h-3 w-full bg-stone rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
       ) : (
         <>
           {/* Desktop table */}

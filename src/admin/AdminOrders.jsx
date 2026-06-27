@@ -599,8 +599,32 @@ export default function AdminOrders() {
 
       {/* Orders Table */}
       {loading ? (
-        <div className="text-ink/50 py-10 text-center flex items-center justify-center gap-2">
-          <Loader2 size={16} className="animate-spin" /> {t("common.loading")}
+        <div className="animate-pulse bg-sand rounded-xl border border-stone-dark overflow-hidden">
+          <div className="flex items-center gap-4 px-4 py-3 bg-stone/50 border-b border-stone-dark">
+            <div className="h-3 w-20 bg-stone-dark/60 rounded" />
+            <div className="h-3 w-28 bg-stone-dark/60 rounded" />
+            <div className="h-3 w-16 bg-stone-dark/60 rounded" />
+            <div className="h-3 w-14 bg-stone-dark/60 rounded" />
+            <div className="h-3 w-16 bg-stone-dark/60 rounded" />
+            <div className="h-3 w-14 bg-stone-dark/60 rounded ml-auto" />
+          </div>
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="flex items-center gap-4 px-4 py-3.5 border-t border-stone-dark">
+              <div className="h-4 w-24 bg-stone rounded font-mono" />
+              <div>
+                <div className="h-4 w-32 bg-stone rounded mb-1.5" />
+                <div className="h-3 w-24 bg-stone rounded" />
+              </div>
+              <div className="h-3 w-20 bg-stone rounded" />
+              <div className="h-4 w-16 bg-stone rounded" />
+              <div className="h-6 w-24 bg-stone rounded-full" />
+              <div className="flex gap-1.5 ml-auto">
+                <div className="w-7 h-7 bg-stone rounded" />
+                <div className="w-7 h-7 bg-stone rounded" />
+                <div className="w-7 h-7 bg-stone rounded" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="bg-sand rounded-xl border border-stone-dark overflow-hidden">

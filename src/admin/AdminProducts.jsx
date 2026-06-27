@@ -256,7 +256,44 @@ export default function AdminProducts() {
     deleteMutation.mutate(id)
   }
 
-  if (loading) return <div className="text-ink/50 py-10 text-center">{t("common.loading")}</div>
+  if (loading) return (
+    <div className="animate-pulse">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <div className="h-8 w-52 bg-stone rounded-lg mb-2" />
+          <div className="h-4 w-24 bg-stone rounded" />
+        </div>
+        <div className="h-10 w-36 bg-stone rounded-md" />
+      </div>
+      {/* Table */}
+      <div className="bg-sand rounded-xl border border-stone-dark overflow-hidden">
+        {/* thead */}
+        <div className="flex items-center gap-4 px-4 py-3 bg-stone/50 border-b border-stone-dark">
+          <div className="h-3 w-32 bg-stone-dark/60 rounded" />
+          <div className="h-3 w-20 bg-stone-dark/60 rounded" />
+          <div className="h-3 w-16 bg-stone-dark/60 rounded ml-auto" />
+          <div className="h-3 w-12 bg-stone-dark/60 rounded" />
+          <div className="h-3 w-14 bg-stone-dark/60 rounded" />
+        </div>
+        {[...Array(7)].map((_, i) => (
+          <div key={i} className="flex items-center gap-4 px-4 py-3 border-t border-stone-dark">
+            <div className="flex items-center gap-3 flex-1">
+              <div className="w-10 h-10 rounded bg-stone shrink-0" />
+              <div className="h-4 w-36 bg-stone rounded" />
+            </div>
+            <div className="h-4 w-20 bg-stone rounded" />
+            <div className="h-4 w-16 bg-stone rounded" />
+            <div className="h-4 w-12 bg-stone rounded" />
+            <div className="flex gap-2 ml-auto">
+              <div className="w-8 h-8 bg-stone rounded" />
+              <div className="w-8 h-8 bg-stone rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 
   return (
     <div>
