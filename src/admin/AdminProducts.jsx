@@ -186,7 +186,7 @@ export default function AdminProducts() {
         images: [...f.images, ...uploaded.filter((u) => !f.images.includes(u))],
       }))
     } catch (e) {
-      setUploadError(e.message || 'ছবি আপলোড করতে সমস্যা হয়েছে')
+      setUploadError(e.message || t.admin.uploadError)
     } finally {
       setUploading(false)
     }
@@ -255,7 +255,7 @@ export default function AdminProducts() {
     deleteMutation.mutate(id)
   }
 
-  if (loading) return <div className="text-ink/50 py-10 text-center">লোড হচ্ছে...</div>
+  if (loading) return <div className="text-ink/50 py-10 text-center">{t.common.loading}</div>
 
   return (
     <div>
@@ -334,7 +334,7 @@ export default function AdminProducts() {
               ))}
               {list.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-ink/40">কোনো প্রোডাক্ট নেই। নতুন প্রোডাক্ট যোগ করুন।</td>
+                  <td colSpan={5} className="px-4 py-10 text-center text-ink/40">{t.admin.noAdminProducts}</td>
                 </tr>
               )}
             </tbody>
@@ -480,9 +480,9 @@ export default function AdminProducts() {
                       className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-stone-dark rounded-md py-4 text-sm text-ink/60 hover:border-clay hover:text-clay transition-colors disabled:opacity-60"
                     >
                       {uploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-                      {uploading ? 'Cloudinary-তে আপলোড হচ্ছে...' : 'ছবি বেছে নিন (JPG, PNG, WEBP)'}
+                      {uploading ? t.admin.uploadingCloudinary : t.admin.chooseImageBtn}
                     </button>
-                    <p className="text-xs text-ink/40 mt-1">একসাথে একাধিক ছবি সিলেক্ট করা যাবে। ছবি Cloudinary-তে আপলোড হয়ে অপ্টিমাইজড লিংক স্বয়ংক্রিয়ভাবে যুক্ত হবে।</p>
+                    <p className="text-xs text-ink/40 mt-1">{t.admin.uploadHint}</p>
                   </div>
                 )}
 
@@ -501,13 +501,13 @@ export default function AdminProducts() {
                     {uploading ? (
                       <>
                         <Loader2 size={28} className="animate-spin text-clay" />
-                        <p className="text-sm font-medium">Cloudinary-তে আপলোড হচ্ছে...</p>
+                        <p className="text-sm font-medium">{t.admin.uploadingCloudinary}</p>
                       </>
                     ) : (
                       <>
                         <Image size={28} className={dragOver ? 'text-clay' : 'text-ink/30'} />
-                        <p className="text-sm font-medium">{dragOver ? 'এখানে ছেড়ে দিন!' : 'ছবি এখানে টেনে আনুন'}</p>
-                        <p className="text-xs">JPG, PNG, WEBP সাপোর্টেড</p>
+                        <p className="text-sm font-medium">{dragOver ? t.admin.dropHere : t.admin.dragHere}</p>
+                        <p className="text-xs">{t.admin.dragDropHint}</p>
                       </>
                     )}
                   </div>

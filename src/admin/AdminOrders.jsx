@@ -184,6 +184,7 @@ function downloadReceipt(order) {
 
 /* ─── Confirm Dialog ─── */
 function ConfirmDialog({ message, subMessage, onConfirm, onCancel, danger = true }) {
+  const { t } = useLanguage()
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-ink/60" onClick={onCancel} />
@@ -195,10 +196,10 @@ function ConfirmDialog({ message, subMessage, onConfirm, onCancel, danger = true
         {subMessage && <p className="text-sm text-ink/60 mb-5">{subMessage}</p>}
         <div className="flex gap-3 mt-5">
           <button onClick={onCancel} className="flex-1 border border-stone-dark text-ink py-2 rounded-lg text-sm hover:bg-stone transition-colors">
-            বাতিল
+            {t.admin.cancel}
           </button>
           <button onClick={onConfirm} className={`flex-1 py-2 rounded-lg text-sm font-medium text-sand transition-colors ${danger ? 'bg-red-500 hover:bg-red-600' : 'bg-clay hover:bg-clay-dark'}`}>
-            নিশ্চিত করুন
+            {t.admin.confirmBtn}
           </button>
         </div>
       </div>
@@ -208,6 +209,7 @@ function ConfirmDialog({ message, subMessage, onConfirm, onCancel, danger = true
 
 /* ─── Edit Modal ─── */
 function EditModal({ order, onClose, onSaved }) {
+  const { t } = useLanguage()
   const [form, setForm] = useState({
     fullName: order.fullName,
     phone: order.phone,
@@ -241,34 +243,34 @@ function EditModal({ order, onClose, onSaved }) {
       <div className="absolute inset-0 bg-ink/50" onClick={onClose} />
       <div className="relative bg-sand rounded-xl w-full max-w-lg max-h-[92vh] overflow-y-auto thin-scroll shadow-xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-dark">
-          <h2 className="font-display text-lg text-ink">অর্ডার এডিট — {order.orderNumber}</h2>
+          <h2 className="font-display text-lg text-ink">{t.admin.editTitle} — {order.orderNumber}</h2>
           <button onClick={onClose} className="tap-tight text-ink/50 hover:text-clay"><X size={20} /></button>
         </div>
         <div className="px-6 py-5 space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <Field label="গ্রাহকের নাম" name="fullName" value={form.fullName} onChange={handleChange} />
-            <Field label="ফোন নম্বর" name="phone" value={form.phone} onChange={handleChange} />
+            <Field label={t.checkout.fullName} name="fullName" value={form.fullName} onChange={handleChange} />
+            <Field label={t.checkout.phone} name="phone" value={form.phone} onChange={handleChange} />
           </div>
-          <Field label="ঠিকানা" name="address" value={form.address} onChange={handleChange} as="textarea" />
-          <Field label="শহর" name="city" value={form.city} onChange={handleChange} />
+          <Field label={t.checkout.address} name="address" value={form.address} onChange={handleChange} as="textarea" />
+          <Field label={t.checkout.city} name="city" value={form.city} onChange={handleChange} />
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-ink/60 mb-1.5">পেমেন্ট পদ্ধতি</label>
+              <label className="block text-xs font-medium text-ink/60 mb-1.5">{t.checkout.paymentMethod}</label>
               <select name="paymentMethod" value={form.paymentMethod} onChange={handleChange}
                 className="w-full bg-stone border border-stone-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40">
-                <option value="cod">ক্যাশ অন ডেলিভারি</option>
-                <option value="bkash">বিকাশ / নগদ</option>
+                <option value="cod">{t.checkout.cod}</option>
+                <option value="bkash">{t.checkout.mobileBank}</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-ink/60 mb-1.5">স্ট্যাটাস</label>
+              <label className="block text-xs font-medium text-ink/60 mb-1.5">{t.admin.statusCol}</label>
               <select name="status" value={form.status} onChange={handleChange}
                 className="w-full bg-stone border border-stone-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40">
-                <option value="processing">প্রসেসিং</option>
-                <option value="shipped">শিপড</option>
-                <option value="delivered">ডেলিভার্ড</option>
-                <option value="cancelled">বাতিল</option>
+                <option value="processing">{t.admin.statusProcessing}</option>
+                <option value="shipped">{t.admin.statusShipped}</option>
+                <option value="delivered">{t.admin.statusDelivered}</option>
+                <option value="cancelled">{t.admin.statusCancelled}</option>
               </select>
             </div>
           </div>
@@ -277,12 +279,12 @@ function EditModal({ order, onClose, onSaved }) {
         </div>
         <div className="px-6 py-4 border-t border-stone-dark flex gap-3">
           <button onClick={onClose} className="flex-1 border border-stone-dark text-ink py-2.5 rounded-lg text-sm hover:bg-stone transition-colors">
-            বাতিল
+            {t.admin.cancel}
           </button>
           <button onClick={handleSave} disabled={saving}
             className="flex-1 bg-clay text-sand py-2.5 rounded-lg text-sm font-medium hover:bg-clay-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-            সেভ করুন
+            {saving ? t.admin.savingBtn : t.admin.saveBtn}
           </button>
         </div>
       </div>
@@ -306,6 +308,7 @@ function Field({ label, name, value, onChange, as = 'input' }) {
 
 /* ─── View Modal ─── */
 function ViewModal({ order, onClose, onDownload, onEdit, onDelete, onStatusChange, updatingId }) {
+  const { t } = useLanguage()
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-ink/50" onClick={onClose} />
@@ -317,15 +320,15 @@ function ViewModal({ order, onClose, onDownload, onEdit, onDelete, onStatusChang
             <p className="text-xs text-ink/50">{formatDate(order.createdAt)}</p>
           </div>
           <div className="flex items-center gap-1.5">
-            <button onClick={onDownload} title="রিসিট ডাউনলোড করুন"
+            <button onClick={onDownload} title={t.admin.receiptDownload}
               className="tap-tight flex items-center gap-1.5 bg-ink text-sand px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-clay transition-colors">
-              <Download size={13} /> রিসিট ডাউনলোড
+              <Download size={13} /> {t.admin.receiptDownload}
             </button>
-            <button onClick={onEdit} title="এডিট"
+            <button onClick={onEdit} title={t.admin.editTitle}
               className="tap-tight p-2 text-ink/50 hover:text-clay transition-colors">
               <Pencil size={16} />
             </button>
-            <button onClick={onDelete} title="ডিলিট"
+            <button onClick={onDelete} title={t.admin.deleteTitle}
               className="tap-tight p-2 text-ink/50 hover:text-red-500 transition-colors">
               <Trash2 size={16} />
             </button>
@@ -336,13 +339,13 @@ function ViewModal({ order, onClose, onDownload, onEdit, onDelete, onStatusChang
         <div className="px-6 py-5 space-y-5 text-sm">
           {/* Customer info */}
           <div className="grid grid-cols-2 gap-3">
-            <InfoRow label="গ্রাহকের নাম" value={order.fullName} />
-            <InfoRow label="ফোন" value={order.phone} />
+            <InfoRow label={t.admin.customerNameLabel} value={order.fullName} />
+            <InfoRow label={t.admin.phoneLabel} value={order.phone} />
             <div className="col-span-2">
-              <InfoRow label="ঠিকানা" value={`${order.address}, ${order.city}`} />
+              <InfoRow label={t.admin.addressLabel} value={`${order.address}, ${order.city}`} />
             </div>
-            <InfoRow label="পেমেন্ট" value={PAYMENT_BN[order.paymentMethod] || order.paymentMethod} />
-            <InfoRow label="স্ট্যাটাস" value={
+            <InfoRow label={t.admin.paymentLabel} value={PAYMENT_BN[order.paymentMethod] || order.paymentMethod} />
+            <InfoRow label={t.admin.statusCol} value={
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[order.status]}`}>
                 {STATUS_BN[order.status]}
               </span>
@@ -351,7 +354,7 @@ function ViewModal({ order, onClose, onDownload, onEdit, onDelete, onStatusChang
 
           {/* Items */}
           <div className="border-t border-stone-dark pt-4">
-            <p className="text-xs text-ink/50 mb-3 font-medium uppercase tracking-wide">প্রোডাক্টসমূহ</p>
+            <p className="text-xs text-ink/50 mb-3 font-medium uppercase tracking-wide">{t.admin.productsLabel}</p>
             <div className="space-y-2">
               {order.items.map((item, i) => (
                 <div key={i} className="flex items-center gap-3 bg-stone/40 rounded-lg p-3">
@@ -361,10 +364,10 @@ function ViewModal({ order, onClose, onDownload, onEdit, onDelete, onStatusChang
                   <div className="flex-1 min-w-0">
                     <p className="text-ink font-medium truncate">{item.name}</p>
                     <p className="text-ink/50 text-xs">
-                      {item.size && `সাইজ: ${item.size}`}
+                      {item.size && `${t.admin.sizeLabel}: ${item.size}`}
                       {item.size && item.color && ' · '}
-                      {item.color && `রং: ${item.color}`}
-                      {' · '}পরিমাণ: {item.qty}
+                      {item.color && `${t.admin.colorLabel}: ${item.color}`}
+                      {' · '}{t.admin.qtyLabel}: {item.qty}
                     </p>
                   </div>
                   <span className="font-mono text-ink shrink-0">৳{(item.price * item.qty).toLocaleString()}</span>
@@ -375,16 +378,16 @@ function ViewModal({ order, onClose, onDownload, onEdit, onDelete, onStatusChang
 
           {/* Totals */}
           <div className="bg-stone/40 rounded-lg p-4 space-y-2">
-            <div className="flex justify-between text-ink/70"><span>সাবটোটাল</span><span className="font-mono">৳{order.subtotal.toLocaleString()}</span></div>
-            <div className="flex justify-between text-ink/70"><span>ডেলিভারি চার্জ</span><span className="font-mono">{order.shipping === 0 ? 'বিনামূল্যে' : `৳${order.shipping.toLocaleString()}`}</span></div>
+            <div className="flex justify-between text-ink/70"><span>{t.admin.subtotalLabel}</span><span className="font-mono">৳{order.subtotal.toLocaleString()}</span></div>
+            <div className="flex justify-between text-ink/70"><span>{t.admin.deliveryChargeLabel}</span><span className="font-mono">{order.shipping === 0 ? t.admin.freeLabel : `৳${order.shipping.toLocaleString()}`}</span></div>
             <div className="flex justify-between text-ink font-semibold border-t border-stone-dark pt-2 mt-1">
-              <span>সর্বমোট</span><span className="font-mono">৳{order.total.toLocaleString()}</span>
+              <span>{t.admin.grandTotalLabel}</span><span className="font-mono">৳{order.total.toLocaleString()}</span>
             </div>
           </div>
 
           {/* Quick status change */}
           <div className="border-t border-stone-dark pt-4">
-            <p className="text-xs text-ink/50 mb-2 font-medium uppercase tracking-wide">স্ট্যাটাস পরিবর্তন</p>
+            <p className="text-xs text-ink/50 mb-2 font-medium uppercase tracking-wide">{t.admin.changeStatusLabel}</p>
             <div className="flex gap-2 flex-wrap">
               {['processing','shipped','delivered','cancelled'].map(s => (
                 <button key={s}
@@ -407,7 +410,7 @@ function ViewModal({ order, onClose, onDownload, onEdit, onDelete, onStatusChang
             <button onClick={onDownload}
               className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-stone-dark text-ink/60 hover:border-clay hover:text-clay rounded-xl py-3 text-sm font-medium transition-colors">
               <FileText size={16} />
-              রিসিট ডাউনলোড করুন (.html → print to PDF)
+              {t.admin.receiptDownloadCta}
             </button>
           </div>
         </div>
@@ -427,6 +430,7 @@ function InfoRow({ label, value }) {
 
 /* ─── Main Component ─── */
 export default function AdminOrders() {
+  const { t } = useLanguage()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -463,7 +467,7 @@ export default function AdminOrders() {
       await api.orders.updateStatus(orderId, newStatus)
       setOrders(prev => prev.map(o => o._id === orderId ? { ...o, status: newStatus } : o))
       if (selectedOrder?._id === orderId) setSelectedOrder(o => ({ ...o, status: newStatus }))
-      showToast('স্ট্যাটাস আপডেট হয়েছে ✓')
+      showToast(t.admin.statusUpdated)
     } catch (err) {
       console.error(err)
     } finally {
@@ -476,7 +480,7 @@ export default function AdminOrders() {
       await api.orders.delete(orderId)
       setOrders(prev => prev.filter(o => o._id !== orderId))
       setSelectedOrder(null)
-      showToast('অর্ডার ডিলিট হয়েছে ✓')
+      showToast(t.admin.orderDeleted)
     } catch (err) {
       console.error(err)
     } finally {
@@ -488,7 +492,7 @@ export default function AdminOrders() {
     try {
       const res = await api.orders.deleteCancelled()
       setOrders(prev => prev.filter(o => o.status !== 'cancelled'))
-      showToast(res.message || 'বাতিল অর্ডার ডিলিট হয়েছে ✓')
+      showToast(res.message || t.admin.cancelledOrdersDeleted)
     } catch (err) {
       console.error(err)
     } finally {
@@ -500,17 +504,17 @@ export default function AdminOrders() {
     setOrders(prev => prev.map(o => o._id === updated._id ? updated : o))
     if (selectedOrder?._id === updated._id) setSelectedOrder(updated)
     setEditingOrder(null)
-    showToast('অর্ডার আপডেট হয়েছে ✓')
+    showToast(t.admin.orderUpdated)
   }
 
   const cancelledCount = orders.filter(o => o.status === 'cancelled').length
 
   const statuses = [
-    { key: 'all',        label: 'সকল' },
-    { key: 'processing', label: 'প্রসেসিং' },
-    { key: 'shipped',    label: 'শিপড' },
-    { key: 'delivered',  label: 'ডেলিভার্ড' },
-    { key: 'cancelled',  label: 'বাতিল' },
+    { key: 'all',        label: t.admin.statusAll },
+    { key: 'processing', label: t.admin.statusProcessing },
+    { key: 'shipped',    label: t.admin.statusShipped },
+    { key: 'delivered',  label: t.admin.statusDelivered },
+    { key: 'cancelled',  label: t.admin.statusCancelled },
   ]
 
   return (
@@ -525,16 +529,16 @@ export default function AdminOrders() {
       {/* Confirm Dialogs */}
       {confirm?.type === 'delete' && (
         <ConfirmDialog
-          message="এই অর্ডারটি মুছে ফেলবেন?"
-          subMessage="এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।"
+          message={t.admin.deleteOrderConfirm}
+          subMessage={t.admin.deleteOrderSub}
           onConfirm={() => handleDelete(confirm.id)}
           onCancel={() => setConfirm(null)}
         />
       )}
       {confirm?.type === 'deleteCancelled' && (
         <ConfirmDialog
-          message={`${cancelledCount}টি বাতিল অর্ডার মুছে ফেলবেন?`}
-          subMessage="সকল বাতিল অর্ডার স্থায়ীভাবে মুছে যাবে।"
+          message={t.admin.deleteCancelledConfirm(cancelledCount)}
+          subMessage={t.admin.deleteCancelledSub}
           onConfirm={handleDeleteCancelled}
           onCancel={() => setConfirm(null)}
         />
@@ -554,7 +558,7 @@ export default function AdminOrders() {
         <ViewModal
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
-          onDownload={() => { downloadReceipt(selectedOrder); showToast('রিসিট ডাউনলোড হচ্ছে ✓') }}
+          onDownload={() => { downloadReceipt(selectedOrder); showToast(t.admin.receiptDownloading) }}
           onEdit={() => setEditingOrder(selectedOrder)}
           onDelete={() => setConfirm({ type: 'delete', id: selectedOrder._id })}
           onStatusChange={handleStatusChange}
@@ -565,15 +569,15 @@ export default function AdminOrders() {
       {/* Page Header */}
       <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-2xl lg:text-3xl text-ink mb-1">অর্ডার ম্যানেজমেন্ট</h1>
-          <p className="text-ink/60 text-sm">সকল অর্ডার দেখুন, এডিট করুন ও রিসিট ডাউনলোড করুন</p>
+          <h1 className="font-display text-2xl lg:text-3xl text-ink mb-1">{t.admin.orderManagement}</h1>
+          <p className="text-ink/60 text-sm">{t.admin.ordersSubDesc}</p>
         </div>
         {cancelledCount > 0 && (
           <button
             onClick={() => setConfirm({ type: 'deleteCancelled' })}
             className="flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
           >
-            <Trash2 size={14} /> {cancelledCount}টি বাতিল অর্ডার মুছুন
+            <Trash2 size={14} /> {t.admin.deleteCancelledBtn(cancelledCount)}
           </button>
         )}
       </div>
@@ -596,7 +600,7 @@ export default function AdminOrders() {
       {/* Orders Table */}
       {loading ? (
         <div className="text-ink/50 py-10 text-center flex items-center justify-center gap-2">
-          <Loader2 size={16} className="animate-spin" /> লোড হচ্ছে...
+          <Loader2 size={16} className="animate-spin" /> {t.common.loading}
         </div>
       ) : (
         <div className="bg-sand rounded-xl border border-stone-dark overflow-hidden">
@@ -604,12 +608,12 @@ export default function AdminOrders() {
             <table className="w-full text-sm">
               <thead className="bg-stone/50 text-left text-ink/60 text-xs uppercase tracking-wide">
                 <tr>
-                  <th className="px-4 py-3">অর্ডার নম্বর</th>
-                  <th className="px-4 py-3">গ্রাহক</th>
-                  <th className="px-4 py-3">তারিখ</th>
-                  <th className="px-4 py-3">মোট</th>
-                  <th className="px-4 py-3">স্ট্যাটাস</th>
-                  <th className="px-4 py-3 text-right">অ্যাকশন</th>
+                  <th className="px-4 py-3">{t.admin.orderNumberCol}</th>
+                  <th className="px-4 py-3">{t.admin.customerNameCol}</th>
+                  <th className="px-4 py-3">{t.admin.dateCol}</th>
+                  <th className="px-4 py-3">{t.admin.totalCol}</th>
+                  <th className="px-4 py-3">{t.admin.statusCol}</th>
+                  <th className="px-4 py-3 text-right">{t.admin.actionColOrders}</th>
                 </tr>
               </thead>
               <tbody>
@@ -631,20 +635,20 @@ export default function AdminOrders() {
                       <div className="flex items-center justify-end gap-1">
                         {/* Download receipt directly from table row */}
                         <button
-                          onClick={() => { downloadReceipt(o); showToast('রিসিট ডাউনলোড হচ্ছে ✓') }}
-                          title="রিসিট ডাউনলোড"
+                          onClick={() => { downloadReceipt(o); showToast(t.admin.receiptDownloading) }}
+                          title={t.admin.receiptDownload}
                           className="tap-tight p-1.5 text-ink/40 hover:text-clay transition-colors">
                           <Download size={14} />
                         </button>
-                        <button onClick={() => setEditingOrder(o)} title="এডিট"
+                        <button onClick={() => setEditingOrder(o)} title={t.admin.editTitle}
                           className="tap-tight p-1.5 text-ink/40 hover:text-clay transition-colors">
                           <Pencil size={14} />
                         </button>
-                        <button onClick={() => setSelectedOrder(o)} title="দেখুন"
+                        <button onClick={() => setSelectedOrder(o)} title={t.admin.viewTitle}
                           className="tap-tight p-1.5 text-ink/40 hover:text-clay transition-colors">
                           <Eye size={14} />
                         </button>
-                        <button onClick={() => setConfirm({ type: 'delete', id: o._id })} title="ডিলিট"
+                        <button onClick={() => setConfirm({ type: 'delete', id: o._id })} title={t.admin.deleteTitle}
                           className="tap-tight p-1.5 text-ink/40 hover:text-red-500 transition-colors">
                           <Trash2 size={14} />
                         </button>
@@ -654,7 +658,7 @@ export default function AdminOrders() {
                 ))}
                 {orders.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-ink/40">কোনো অর্ডার নেই</td>
+                    <td colSpan={6} className="px-4 py-12 text-center text-ink/40">{t.admin.noOrders}</td>
                   </tr>
                 )}
               </tbody>

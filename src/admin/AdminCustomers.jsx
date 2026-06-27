@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react'
 import { Users, Mail, Phone, Calendar, ShieldCheck, Chrome, Facebook, UserCircle, Search } from 'lucide-react'
 import { api } from '../api.js'
+import { useLanguage } from '../context/LanguageContext.jsx'
 
 function formatDate(d) {
   return new Date(d).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 function AuthBadge({ user }) {
+  const { t } = useLanguage()
   if (user.googleId)   return <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600"><Chrome size={10}/> Google</span>
   if (user.facebookId) return <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600"><Facebook size={10}/> Facebook</span>
   if (user.phone && !user.email) return <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-600"><Phone size={10}/> OTP</span>
-  return <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-stone text-ink/50"><Mail size={10}/> ইমেইল</span>
+  return <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-stone text-ink/50"><Mail size={10}/> {t.admin.authEmail}</span>
 }
 
 function Avatar({ user, size = 'md' }) {
@@ -36,6 +38,7 @@ function Avatar({ user, size = 'md' }) {
 }
 
 export default function AdminCustomers() {
+  const { t } = useLanguage()
   const [users, setUsers]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState('')
@@ -74,10 +77,10 @@ export default function AdminCustomers() {
   }
 
   const tabs = [
-    { key: 'all',      label: 'সকল' },
+    { key: 'all',      label: t.admin.statusAll },
     { key: 'google',   label: 'Google' },
     { key: 'facebook', label: 'Facebook' },
-    { key: 'email',    label: 'ইমেইল' },
+    { key: 'email',    label: t.admin.authEmail },
     { key: 'otp',      label: 'OTP' },
   ]
 
@@ -86,8 +89,8 @@ export default function AdminCustomers() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 className="font-display text-2xl lg:text-3xl text-ink mb-1">ব্যবহারকারীগণ</h1>
-          <p className="text-ink/60 text-sm">মোট {users.length} জন রেজিস্টার্ড ব্যবহারকারী</p>
+          <h1 className="font-display text-2xl lg:text-3xl text-ink mb-1">{t.admin.usersTitle}</h1>
+          <p className="text-ink/60 text-sm">{t.admin.totalUsersDesc(users.length)}</p>
         </div>
         {/* Search */}
         <div className="relative">
@@ -95,7 +98,7 @@ export default function AdminCustomers() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="নাম, ইমেইল বা ফোন..."
+            placeholder={t.admin.searchUsersPlaceholder}
             className="pl-8 pr-4 py-2 bg-sand border border-stone-dark rounded-lg text-sm w-56 focus:outline-none focus:ring-2 focus:ring-clay/40"
           />
         </div>
@@ -119,7 +122,7 @@ export default function AdminCustomers() {
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
       {loading ? (
-        <div className="text-ink/50 py-10 text-center">লোড হচ্ছে...</div>
+        <div className="text-ink/50 py-10 text-center">{t.common.loading}</div>
       ) : (
         <>
           {/* Desktop table */}
@@ -127,11 +130,11 @@ export default function AdminCustomers() {
             <table className="w-full text-sm">
               <thead className="bg-stone/50 text-left text-ink/60 text-xs uppercase tracking-wide">
                 <tr>
-                  <th className="px-4 py-3">ব্যবহারকারী</th>
-                  <th className="px-4 py-3">যোগাযোগ</th>
-                  <th className="px-4 py-3">লগইন পদ্ধতি</th>
-                  <th className="px-4 py-3">ভূমিকা</th>
-                  <th className="px-4 py-3">যোগদানের তারিখ</th>
+                  <th className="px-4 py-3">{t.admin.userCol}</th>
+                  <th className="px-4 py-3">{t.admin.contactCol}</th>
+                  <th className="px-4 py-3">{t.admin.loginMethodCol}</th>
+                  <th className="px-4 py-3">{t.admin.roleCol}</th>
+                  <th className="px-4 py-3">{t.admin.joinedDateCol}</th>
                 </tr>
               </thead>
               <tbody>
@@ -153,8 +156,8 @@ export default function AdminCustomers() {
                     <td className="px-4 py-3"><AuthBadge user={u} /></td>
                     <td className="px-4 py-3">
                       {u.role === 'admin'
-                        ? <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-clay/15 text-clay w-fit"><ShieldCheck size={10}/> অ্যাডমিন</span>
-                        : <span className="text-xs text-ink/40">কাস্টমার</span>
+                        ? <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-clay/15 text-clay w-fit"><ShieldCheck size={10}/> {t.admin.roleAdmin}</span>
+                        : <span className="text-xs text-ink/40">{t.admin.roleCustomer}</span>
                       }
                     </td>
                     <td className="px-4 py-3 text-ink/50 text-xs">
@@ -163,7 +166,7 @@ export default function AdminCustomers() {
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={5} className="px-4 py-12 text-center text-ink/40">কোনো ব্যবহারকারী পাওয়া যায়নি</td></tr>
+                  <tr><td colSpan={5} className="px-4 py-12 text-center text-ink/40">{t.admin.noUsersFound}</td></tr>
                 )}
               </tbody>
             </table>
@@ -177,7 +180,7 @@ export default function AdminCustomers() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <p className="text-ink font-medium">{u.name}</p>
-                    {u.role === 'admin' && <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-clay/15 text-clay"><ShieldCheck size={10}/> অ্যাডমিন</span>}
+                    {u.role === 'admin' && <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-clay/15 text-clay"><ShieldCheck size={10}/> {t.admin.roleAdmin}</span>}
                   </div>
                   {u.email && <p className="text-ink/60 text-xs truncate">{u.email}</p>}
                   {u.phone && <p className="text-ink/50 text-xs font-mono">{u.phone}</p>}
@@ -189,7 +192,7 @@ export default function AdminCustomers() {
               </div>
             ))}
             {filtered.length === 0 && (
-              <div className="text-center text-ink/40 py-10">কোনো ব্যবহারকারী পাওয়া যায়নি</div>
+              <div className="text-center text-ink/40 py-10">{t.admin.noUsersFound}</div>
             )}
           </div>
         </>
