@@ -7,6 +7,7 @@ import {
   deleteProduct,
   migrateBadgeKeys,
   migrateProductIds,
+  migrateCategoryKey,
 } from '../controllers/productController.js'
 import { protect, adminOnly } from '../middleware/auth.js'
 
@@ -16,6 +17,7 @@ router.get('/', getProducts)
 // ⚠️ specific routes must come before /:id
 router.post('/migrate/badges',      protect, adminOnly, migrateBadgeKeys)
 router.post('/migrate/product-ids', protect, adminOnly, migrateProductIds)
+router.post('/migrate/category',    protect, adminOnly, migrateCategoryKey)
 router.get('/:id', getProductById)
 
 router.post('/',    protect, adminOnly, createProduct)

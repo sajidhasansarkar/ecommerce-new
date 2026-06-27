@@ -373,7 +373,10 @@ export default function AdminProducts() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-ink/70">
-                    <span>{t(`categories.${p.categoryKey}`)}</span>
+                    <span>{(() => {
+                      const cat = categories.find(c => c.key === p.categoryKey)
+                      return cat ? (lang === 'bn' ? cat.name.bn : cat.name.en) : p.categoryKey
+                    })()}</span>
                     {p.badge?.bn && (
                       <span className="ml-2 inline-block bg-clay/10 text-clay text-[10px] font-semibold px-1.5 py-0.5 rounded">
                         {p.badge.bn}

@@ -9,6 +9,38 @@ export default function Dashboard() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [catFixing, setCatFixing] = useState(false)
+  const [catFixResult, setCatFixResult] = useState('')
+
+  async function fixCategoryKeys() {
+    if (!window.confirm('shoes → sports_shoes এবং ladies_bag → ladies_bag fix করবেন? একবারের কাজ।')) return
+    setCatFixing(true)
+    setCatFixResult('')
+    try {
+      const token = localStorage.getItem('authToken')
+      const base = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+
+      // Step 1: shoes → sports_shoes
+      const r1 = await fetch(`${base}/api/products/migrate/category`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ from: 'shoes', to: 'sports_shoes' }),
+      })
+      const d1 = await r1.json()
+
+      // Step 2: product ID যোগ করো পুরনোগুলোতে
+      const r2 = await fetch(`${base}/api/products/migrate/product-ids`, {
+        method: 'POST', headers,
+      })
+      const d2 = await r2.json()
+
+      setCatFixResult(`✓ ${d1.message} | ✓ ${d2.message}`)
+    } catch {
+      setCatFixResult('Error হয়েছে, আবার চেষ্টা করুন')
+    } finally {
+      setCatFixing(false)
+    }
+  }
   useEffect(() => {
     async function load() {
       try {
@@ -156,6 +188,24 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+      {/* Category Key Fix — একবারের কাজ */}
+      <div className="bg-sand rounded-xl border border-amber-200 p-5 mt-2">
+        <h2 className="font-display text-base text-ink mb-1 flex items-center gap-2">
+          🔧 Category Fix
+        </h2>
+        <p className="text-xs text-ink/50 mb-3">
+          পুরনো প্রোডাক্টের <code className="bg-stone px-1 rounded">shoes</code> categoryKey → <code className="bg-stone px-1 rounded">sports_shoes</code> করতে একবার চালান।
+          Sports Shoes ক্যাটাগরিতে প্রোডাক্ট না দেখালে এটা চালান।
+        </p>
+        <button
+          onClick={fixCategoryKeys}
+          disabled={catFixing}
+          className="bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors disabled:opacity-60"
+        >
+          {catFixing ? 'চলছে...' : '🔧 Fix করুন — Category + Product ID'}
+        </button>
+        {catFixResult && <p className="text-sm text-green-700 mt-2 font-medium">✓ {catFixResult}</p>}
+      </div>
     </div>
   )
 }

@@ -197,3 +197,15 @@ export async function migrateProductIds(req, res) {
     res.status(500).json({ message: err.message })
   }
 }
+
+// POST /api/products/migrate/category — পুরনো categoryKey bulk update
+export async function migrateCategoryKey(req, res) {
+  try {
+    const { from, to } = req.body
+    if (!from || !to) return res.status(400).json({ message: '"from" এবং "to" দিতে হবে' })
+    const result = await Product.updateMany({ categoryKey: from }, { $set: { categoryKey: to } })
+    res.json({ message: `${result.modifiedCount}টি প্রোডাক্টের categoryKey "${from}" → "${to}" করা হয়েছে`, updated: result.modifiedCount })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}

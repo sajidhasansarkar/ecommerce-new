@@ -295,9 +295,6 @@ export default function Footer() {
           object-fit: contain;
           margin-bottom: 8px;
           animation: fadeSlideUp 0.6s ease both;
-          /* লোগো যদি dark হয় তাহলে dark footer-এ দেখা যায় না।
-             নিচের filter টা লোগোকে light করে দেয় যাতে dark background-এ দেখা যায়। */
-          filter: brightness(0) invert(1);
         }
         .footer-brand-line {
           width: 40px;
