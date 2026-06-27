@@ -125,8 +125,8 @@ export default function AdminProducts() {
     setUploading(true)
     setUploadError('')
     try {
-      // প্রতিটা ফাইলকে আগে base64 এ কনভার্ট করে, তারপর imgbb-তে (আমাদের ব্যাকএন্ডের
-      // মাধ্যমে) আপলোড করা হয়। imgbb থেকে পাওয়া সরাসরি লিংকটাই ফর্মে যোগ হবে —
+      // প্রতিটা ফাইলকে আগে base64 এ কনভার্ট করে, তারপর Cloudinary-তে (আমাদের ব্যাকএন্ডের
+      // মাধ্যমে) আপলোড করা হয়। Cloudinary থেকে পাওয়া সরাসরি লিংকটাই ফর্মে যোগ হবে —
       // base64 ডেটা ডাটাবেসে সেভ হয় না।
       const dataUrls = await Promise.all(filtered.map(fileToDataUrl))
       const uploaded = []
@@ -451,9 +451,9 @@ export default function AdminProducts() {
                       className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-stone-dark rounded-md py-4 text-sm text-ink/60 hover:border-clay hover:text-clay transition-colors disabled:opacity-60"
                     >
                       {uploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-                      {uploading ? 'imgbb-তে আপলোড হচ্ছে...' : 'ছবি বেছে নিন (JPG, PNG, WEBP)'}
+                      {uploading ? 'Cloudinary-তে আপলোড হচ্ছে...' : 'ছবি বেছে নিন (JPG, PNG, WEBP)'}
                     </button>
-                    <p className="text-xs text-ink/40 mt-1">একসাথে একাধিক ছবি সিলেক্ট করা যাবে। ছবি imgbb-তে আপলোড হয়ে লিংক স্বয়ংক্রিয়ভাবে যুক্ত হবে।</p>
+                    <p className="text-xs text-ink/40 mt-1">একসাথে একাধিক ছবি সিলেক্ট করা যাবে। ছবি Cloudinary-তে আপলোড হয়ে অপ্টিমাইজড লিংক স্বয়ংক্রিয়ভাবে যুক্ত হবে।</p>
                   </div>
                 )}
 
@@ -472,7 +472,7 @@ export default function AdminProducts() {
                     {uploading ? (
                       <>
                         <Loader2 size={28} className="animate-spin text-clay" />
-                        <p className="text-sm font-medium">imgbb-তে আপলোড হচ্ছে...</p>
+                        <p className="text-sm font-medium">Cloudinary-তে আপলোড হচ্ছে...</p>
                       </>
                     ) : (
                       <>
