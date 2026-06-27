@@ -582,7 +582,8 @@ export default function AdminProducts() {
                   </div>
                 </div>
                 {/* Live preview */}
-                {form.oldPrice && form.price && Number(form.oldPrice) > Number(form.price) && (\n                  <div className="flex items-center gap-2 text-sm pt-1">
+                {form.oldPrice && form.price && Number(form.oldPrice) > Number(form.price) && (
+                  <div className="flex items-center gap-2 text-sm pt-1">
                     <span className="text-ink/50">Preview:</span>
                     <span className="font-mono font-medium text-ink">৳{form.price}</span>
                     <span className="font-mono text-ink/40 line-through text-xs">৳{form.oldPrice}</span>
