@@ -156,34 +156,38 @@ export default function Navbar() {
             {/* Desktop nav — centered naturally between brand and right icons */}
             <nav className="hidden lg:flex items-center gap-5 flex-1 justify-center">
 
-              <NavLink to="/shop" end className={
-                `nav-pill text-ink/80 hover:text-clay ${location.pathname === '/shop' && !activeBadge && !activeCategory ? 'active' : ''}`
-              }>
+              <span
+                onClick={() => navigate('/shop')}
+                className={`nav-pill cursor-pointer text-ink/80 hover:text-clay ${location.pathname === '/shop' && !activeBadge && !activeCategory ? 'active' : ''}`}
+              >
                 {t('nav.shop')}
-              </NavLink>
+              </span>
 
-              <NavLink to="/shop?badge=new" className={
-                `nav-pill flex items-center gap-1 text-ink/80 hover:text-clay ${activeBadge === 'new' ? 'active' : ''}`
-              }>
+              <span
+                onClick={() => navigate('/shop?badge=new')}
+                className={`nav-pill cursor-pointer flex items-center gap-1 text-ink/80 hover:text-clay ${activeBadge === 'new' ? 'active' : ''}`}
+              >
                 <Sparkles size={12} className="text-emerald-500" />
                 {t('nav.newArrivals')}
                 <span className="nav-badge-new text-[9px] font-semibold px-1.5 py-0.5 rounded-full ml-0.5">NEW</span>
-              </NavLink>
+              </span>
 
-              <NavLink to="/shop?badge=bestseller" className={
-                `nav-pill flex items-center gap-1 text-ink/80 hover:text-clay ${activeBadge === 'bestseller' ? 'active' : ''}`
-              }>
+              <span
+                onClick={() => navigate('/shop?badge=bestseller')}
+                className={`nav-pill cursor-pointer flex items-center gap-1 text-ink/80 hover:text-clay ${activeBadge === 'bestseller' ? 'active' : ''}`}
+              >
                 <TrendingUp size={12} className="text-amber-500" />
                 {t('nav.bestSellers')}
-              </NavLink>
+              </span>
 
-              <NavLink to="/shop?badge=sale" className={
-                `nav-pill flex items-center gap-1 text-ink/80 hover:text-clay ${activeBadge === 'sale' ? 'active' : ''}`
-              }>
+              <span
+                onClick={() => navigate('/shop?badge=sale')}
+                className={`nav-pill cursor-pointer flex items-center gap-1 text-ink/80 hover:text-clay ${activeBadge === 'sale' ? 'active' : ''}`}
+              >
                 <Tag size={12} className="text-clay" />
                 {t('nav.deals')}
                 <span className="nav-badge-sale text-[9px] font-semibold px-1.5 py-0.5 rounded-full ml-0.5">🔥</span>
-              </NavLink>
+              </span>
 
               {/* ── Categories dropdown — opens on HOVER ── */}
               <div

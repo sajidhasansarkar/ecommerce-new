@@ -634,6 +634,7 @@ export default function AdminOrders() {
                 <tr>
                   <th className="px-4 py-3">{t("admin.orderNumberCol")}</th>
                   <th className="px-4 py-3">{t("admin.customerNameCol")}</th>
+                  <th className="px-4 py-3">Products</th>
                   <th className="px-4 py-3">{t("admin.dateCol")}</th>
                   <th className="px-4 py-3">{t("admin.totalCol")}</th>
                   <th className="px-4 py-3">{t("admin.statusCol")}</th>
@@ -647,6 +648,23 @@ export default function AdminOrders() {
                     <td className="px-4 py-3">
                       <p className="text-ink font-medium">{o.fullName}</p>
                       <p className="text-ink/50 text-xs">{o.phone}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="space-y-1 max-w-[200px]">
+                        {o.items.map((item, i) => (
+                          <div key={i} className="flex items-center gap-1.5">
+                            {item.image && (
+                              <img src={item.image} alt={item.name} className="w-7 h-7 rounded object-cover shrink-0 bg-stone" />
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-ink text-xs font-medium truncate max-w-[140px]">{item.name}</p>
+                              <p className="text-ink/40 text-[10px]">
+                                {item.size && `${item.size} · `}qty: {item.qty}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-ink/60 text-xs">{formatDate(o.createdAt)}</td>
                     <td className="px-4 py-3 font-mono text-ink">৳{o.total.toLocaleString()}</td>
@@ -682,7 +700,7 @@ export default function AdminOrders() {
                 ))}
                 {orders.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-ink/40">{t("admin.noOrders")}</td>
+                    <td colSpan={7} className="px-4 py-12 text-center text-ink/40">{t("admin.noOrders")}</td>
                   </tr>
                 )}
               </tbody>

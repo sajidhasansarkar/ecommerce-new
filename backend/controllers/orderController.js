@@ -1,5 +1,6 @@
 import Order from '../models/Order.js'
 import Product from '../models/Product.js'
+import mongoose from 'mongoose'
 
 const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
@@ -35,9 +36,13 @@ export async function createOrder(req, res) {
 
     // Stock deduction — order place হওয়ার সাথে সাথে stock কমানো হচ্ছে
     for (const item of items) {
-      const productId = item.productId || item._id
-      if (!productId) continue
-      const product = await Product.findById(productId)
+      const rawId = item.productId || item._id
+      if (!rawId) continue
+      // ObjectId valid কিনা check করো
+      const isValidId = mongoose.Types.ObjectId.isValid(rawId)
+      if (!isValidId) continue
+
+      const product = await Product.findById(rawId)
       if (!product) continue
 
       const qty = Number(item.qty) || Number(item.quantity) || 1
@@ -49,6 +54,7 @@ export async function createOrder(req, res) {
         if (variant) {
           variant.stock = Math.max(0, variant.stock - qty)
           product.stock = product.sizeVariants.reduce((sum, v) => sum + (v.stock || 0), 0)
+          product.markModified('sizeVariants')
           await product.save()
         }
       } else {
