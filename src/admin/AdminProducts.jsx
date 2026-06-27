@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Pencil, Trash2, X, Loader2, Link as LinkIcon, Upload, Image } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext.jsx'
 import { useCategories } from '../context/CategoryContext.jsx'
@@ -39,10 +40,22 @@ function fileToDataUrl(file) {
 export default function AdminProducts() {
   const { t, lang } = useLanguage()
   const { categories } = useCategories()
-  const [list, setList] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
+  const queryClient = useQueryClient()
+
+  // ━━━ প্রোডাক্ট লিস্ট — useQuery দিয়ে fetch ও cache করা হচ্ছে ━━━
+  // প্রথমবার লোড হওয়ার সময় isLoading true থাকে, কিন্তু এরপর প্রতিটা
+  // mutation-এ (add/edit/delete) আমরা cache সরাসরি বদলে দিই, তাই useQuery
+  // আর কখনো isLoading=true ফিরিয়ে পুরো পেজ রিলোড দেখায় না।
+  const {
+    data: list = [],
+    isLoading: loading,
+    error: queryError,
+  } = useQuery({
+    queryKey: ['admin-products'],
+    queryFn: () => api.products.list(),
+  })
+
+  const [formError, setFormError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
@@ -53,25 +66,58 @@ export default function AdminProducts() {
   const [uploadError, setUploadError] = useState('')
   const fileInputRef = useRef(null)
 
-  async function loadProducts() {
-    try {
-      setLoading(true)
-      const data = await api.products.list()
-      setList(data)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
+  // লিস্ট লোড করতে গিয়ে এরর হলে দেখানোর জন্য — মডালের ফর্ম এরর থেকে আলাদা রাখা হয়েছে
+  const error = formError || queryError?.message || ''
 
-  useEffect(() => { loadProducts() }, [])
+  // ━━━ Create/Update mutation ━━━
+  const saveMutation = useMutation({
+    mutationFn: ({ id, payload }) =>
+      id ? api.products.update(id, payload) : api.products.create(payload),
+    onSuccess: () => {
+      // সার্ভারে সেভ হয়ে গেছে — cache invalidate করে ব্যাকগ্রাউন্ডে রিফ্রেশ করা হচ্ছে,
+      // কিন্তু পুরোনো ডেটা স্ক্রিনে থেকেই যায় যতক্ষণ না নতুনটা আসে (কোনো ফ্ল্যাশ/রিলোড দেখাবে না)
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] })
+      setModalOpen(false)
+    },
+    onError: (err) => setFormError(err.message),
+  })
+
+  // ━━━ Delete mutation — optimistic update সহ ━━━
+  // ডিলিট বাটনে ক্লিক করলেই সাথে সাথে লিস্ট থেকে আইটেমটা সরিয়ে দেওয়া হয় (UI তে),
+  // ব্যাকগ্রাউন্ডে সার্ভারে রিকোয়েস্ট যায়। কোনো "লোড হচ্ছে..." স্পিনার দেখাবে না,
+  // কোনো রিলোড হবে না — শুধু আইটেমটা মিলিয়ে যাবে।
+  const deleteMutation = useMutation({
+    mutationFn: (id) => api.products.delete(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['admin-products'] })
+      const previousList = queryClient.getQueryData(['admin-products'])
+      queryClient.setQueryData(['admin-products'], (old = []) =>
+        old.filter((p) => p._id !== id)
+      )
+      return { previousList }
+    },
+    onError: (err, _id, context) => {
+      // সার্ভারে ডিলিট ব্যর্থ হলে আগের লিস্ট ফিরিয়ে আনা হচ্ছে
+      if (context?.previousList) {
+        queryClient.setQueryData(['admin-products'], context.previousList)
+      }
+      setFormError(err.message)
+    },
+    onSettled: () => {
+      // নিশ্চিত করার জন্য ব্যাকগ্রাউন্ডে একবার সার্ভারের সাথে sync করা হচ্ছে,
+      // কিন্তু এটা UI ব্লক করবে না বা স্পিনার দেখাবে না
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] })
+    },
+  })
+
+  const saving = saveMutation.isPending
 
   function openAddModal() {
     setForm(emptyForm)
     setEditingId(null)
     setImgTab('url')
     setUploadError('')
+    setFormError('')
     setModalOpen(true)
   }
 
@@ -92,6 +138,7 @@ export default function AdminProducts() {
     setEditingId(product._id)
     setImgTab('url')
     setUploadError('')
+    setFormError('')
     setModalOpen(true)
   }
 
@@ -180,7 +227,7 @@ export default function AdminProducts() {
     })
   }
 
-  async function handleSubmit(e) {
+  function handleSubmit(e) {
     e.preventDefault()
     if (!form.nameBn.trim() || !form.nameEn.trim() || !form.price || !form.stock) return
 
@@ -198,32 +245,14 @@ export default function AdminProducts() {
       })(),
     }
 
-    setSaving(true)
-    setError('')
-    try {
-      if (editingId) {
-        await api.products.update(editingId, payload)
-      } else {
-        await api.products.create(payload)
-      }
-      setModalOpen(false)
-      await loadProducts()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSaving(false)
-    }
+    setFormError('')
+    saveMutation.mutate({ id: editingId, payload })
   }
 
-  async function confirmDelete() {
-    try {
-      await api.products.delete(deleteTarget._id)
-      setDeleteTarget(null)
-      await loadProducts()
-    } catch (err) {
-      setError(err.message)
-      setDeleteTarget(null)
-    }
+  function confirmDelete() {
+    const id = deleteTarget._id
+    setDeleteTarget(null) // মডাল সাথে সাথে বন্ধ হবে, লিস্ট থেকে আইটেমও অপটিমিস্টিকালি সরে যাবে
+    deleteMutation.mutate(id)
   }
 
   if (loading) return <div className="text-ink/50 py-10 text-center">লোড হচ্ছে...</div>
