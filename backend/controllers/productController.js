@@ -105,6 +105,11 @@ export async function createProduct(req, res) {
       data.discountPercent = Math.round(((data.oldPrice - data.price) / data.oldPrice) * 100)
     }
 
+    // sizeVariants থাকলে stock auto-sum (pre-save hook-ও করে, এটা double safety)
+    if (Array.isArray(data.sizeVariants) && data.sizeVariants.length > 0) {
+      data.stock = data.sizeVariants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0)
+    }
+
     const product = new Product(data)
     const saved = await product.save()
     res.status(201).json(saved)
@@ -125,6 +130,11 @@ export async function updateProduct(req, res) {
       }
     } else if (!data.discountPercent) {
       data.discountPercent = null
+    }
+
+    // sizeVariants থাকলে stock auto-sum
+    if (Array.isArray(data.sizeVariants) && data.sizeVariants.length > 0) {
+      data.stock = data.sizeVariants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0)
     }
 
     const updated = await Product.findByIdAndUpdate(req.params.id, data, {

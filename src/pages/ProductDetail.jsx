@@ -29,8 +29,9 @@ export default function ProductDetail() {
       .then((p) => {
         setProduct(p)
         setSelectedColor(p.colors?.[0] || null)
-        setSelectedSize(p.sizes?.[0] || null)
-        // load related
+        // sizeVariants থাকলে সেখান থেকে, না থাকলে পুরনো sizes থেকে
+        const firstSize = p.sizeVariants?.[0]?.size || p.sizes?.[0] || null
+        setSelectedSize(firstSize)
         return api.products.list({ category: p.categoryKey })
       })
       .then((list) => {
@@ -135,9 +136,21 @@ export default function ProductDetail() {
                 <span className="text-ink/40">·</span>
               </>
             )}
-            <span className={`text-sm ${product.stock > 5 ? 'text-sage' : 'text-clay'}`}>
-              {product.stock > 5 ? t('product.inStock') : t('product.lowStock', product.stock)}
-            </span>
+            {(() => {
+              // selected size-এর stock দেখাবে, না হলে total stock
+              const variant = product.sizeVariants?.find(v => v.size === selectedSize)
+              const displayStock = variant ? variant.stock : product.stock
+              return (
+                <span className={`text-sm ${displayStock > 5 ? 'text-sage' : displayStock === 0 ? 'text-clay font-medium' : 'text-clay'}`}>
+                  {displayStock === 0
+                    ? (selectedSize ? `${selectedSize} — স্টক নেই` : 'স্টক নেই')
+                    : displayStock > 5
+                      ? t('product.inStock')
+                      : t('product.lowStock', displayStock)
+                  }
+                </span>
+              )
+            })()}
           </div>
 
           <div className="flex items-baseline gap-3 mb-6">
@@ -149,21 +162,33 @@ export default function ProductDetail() {
 
           {description && <p className="text-ink/70 leading-relaxed mb-6">{description}</p>}
 
-          {product.sizes?.length > 0 && (
+          {/* sizeVariants (নতুন system) অথবা sizes (পুরনো) */}
+          {(product.sizeVariants?.length > 0 || product.sizes?.length > 0) && (
             <div className="mb-6">
               <p className="text-sm font-medium text-ink mb-2">{t('product.selectSize')}</p>
               <div className="flex gap-2 flex-wrap">
-                {product.sizes.map((s) => (
+                {(product.sizeVariants?.length > 0
+                  ? product.sizeVariants
+                  : product.sizes.map(s => ({ size: s, stock: product.stock }))
+                ).map(({ size: s, stock: sv }) => (
                   <button
                     key={s}
                     onClick={() => setSelectedSize(s)}
-                    className={`w-11 h-11 rounded-md border text-sm font-medium transition-colors ${
-                      selectedSize === s
-                        ? 'border-ink bg-ink text-sand'
-                        : 'border-stone-dark text-ink/70 hover:border-clay'
+                    disabled={sv === 0}
+                    className={`min-w-[44px] h-11 px-3 rounded-md border text-sm font-medium transition-colors relative ${
+                      sv === 0
+                        ? 'border-stone-dark text-ink/25 cursor-not-allowed line-through'
+                        : selectedSize === s
+                          ? 'border-ink bg-ink text-sand'
+                          : 'border-stone-dark text-ink/70 hover:border-clay'
                     }`}
                   >
                     {s}
+                    {sv > 0 && sv <= 3 && (
+                      <span className="absolute -top-1.5 -right-1.5 bg-clay text-sand text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                        {sv}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -189,30 +214,41 @@ export default function ProductDetail() {
             </div>
           )}
 
-          <div className="flex items-center gap-4 mb-4">
-            <div className="flex items-center border border-stone-dark rounded-md">
-              <button
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
-                className="p-2.5 hover:text-clay"
-                aria-label="minus"
-              >
-                <Minus size={15} />
-              </button>
-              <span className="w-10 text-center text-sm font-medium">{qty}</span>
-              <button
-                onClick={() => setQty((q) => Math.min(product.stock, q + 1))}
-                className="p-2.5 hover:text-clay"
-                aria-label="plus"
-              >
-                <Plus size={15} />
-              </button>
-            </div>
-            <button
-              onClick={handleAddToCart}
-              className="flex-1 border border-ink text-ink py-3 rounded-md font-medium hover:bg-ink hover:text-sand transition-colors"
-            >
-              {t('product.addToCart')}
-            </button>
+          {(() => {
+            const variant = product.sizeVariants?.find(v => v.size === selectedSize)
+            const availableStock = variant ? variant.stock : product.stock
+            const outOfStock = availableStock === 0
+            return (
+              <div className="flex items-center gap-4 mb-4">
+                <div className={`flex items-center border rounded-md ${outOfStock ? 'border-stone-dark opacity-40' : 'border-stone-dark'}`}>
+                  <button
+                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    disabled={outOfStock}
+                    className="p-2.5 hover:text-clay disabled:cursor-not-allowed"
+                    aria-label="minus"
+                  >
+                    <Minus size={15} />
+                  </button>
+                  <span className="w-10 text-center text-sm font-medium">{qty}</span>
+                  <button
+                    onClick={() => setQty((q) => Math.min(availableStock, q + 1))}
+                    disabled={outOfStock}
+                    className="p-2.5 hover:text-clay disabled:cursor-not-allowed"
+                    aria-label="plus"
+                  >
+                    <Plus size={15} />
+                  </button>
+                </div>
+                <button
+                  onClick={handleAddToCart}
+                  disabled={outOfStock}
+                  className="flex-1 border border-ink text-ink py-3 rounded-md font-medium hover:bg-ink hover:text-sand transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-ink"
+                >
+                  {outOfStock ? 'স্টক নেই' : t('product.addToCart')}
+                </button>
+              </div>
+            )
+          })()}
           </div>
           <button
             onClick={handleBuyNow}

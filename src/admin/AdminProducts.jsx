@@ -25,6 +25,9 @@ const emptyForm = {
   images: [],
   imageInput: '',
   badgeKey: '',
+  // size-wise stock: [{size:'39', stock:'10'}, ...]  — খালি মানে size নেই (ব্যাগ/জুয়েলারি)
+  sizeVariants: [],
+  hasSizes: false,
 }
 
 // Convert a File to base64 data URL
@@ -135,6 +138,10 @@ export default function AdminProducts() {
       images: product.images || [],
       imageInput: '',
       badgeKey: BADGE_OPTIONS.find((b) => b.bn === product.badge?.bn)?.key || '',
+      sizeVariants: product.sizeVariants?.length
+        ? product.sizeVariants.map(v => ({ size: v.size, stock: String(v.stock) }))
+        : [],
+      hasSizes: !!(product.sizeVariants?.length > 0),
     })
     setEditingId(product._id)
     setImgTab('url')
@@ -230,7 +237,8 @@ export default function AdminProducts() {
 
   function handleSubmit(e) {
     e.preventDefault()
-    if (!form.nameBn.trim() || !form.nameEn.trim() || !form.price || !form.stock) return
+    if (!form.nameBn.trim() || !form.nameEn.trim() || !form.price) return
+    if (!form.hasSizes && !form.stock) return
 
     const payload = {
       categoryKey: form.categoryKey,
@@ -238,9 +246,13 @@ export default function AdminProducts() {
       description: { bn: form.descriptionBn, en: form.descriptionEn },
       price: Number(form.price),
       oldPrice: form.oldPrice ? Number(form.oldPrice) : null,
-      // manually দিলে সেটা নেওয়া হবে, না দিলে backend auto-calculate করবে
       discountPercent: form.discountPercent ? Number(form.discountPercent) : null,
-      stock: Number(form.stock),
+      stock: form.hasSizes
+        ? form.sizeVariants.reduce((s, v) => s + (Number(v.stock) || 0), 0)
+        : Number(form.stock),
+      sizeVariants: form.hasSizes
+        ? form.sizeVariants.filter(v => v.size.trim()).map(v => ({ size: v.size.trim(), stock: Number(v.stock) || 0 }))
+        : [],
       images: form.images,
       badge: (() => {
         const opt = BADGE_OPTIONS.find((b) => b.key === form.badgeKey)
@@ -443,11 +455,97 @@ export default function AdminProducts() {
                   <input name="price" type="number" min="0" value={form.price} onChange={handleChange} required
                     className="w-full bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">Stock *</label>
-                  <input name="stock" type="number" min="0" value={form.stock} onChange={handleChange} required
-                    className="w-full bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
+                {/* size না থাকলেই stock field দেখাবে */}
+                {!form.hasSizes && (
+                  <div>
+                    <label className="block text-sm font-medium text-ink mb-1.5">Stock *</label>
+                    <input name="stock" type="number" min="0" value={form.stock} onChange={handleChange} required={!form.hasSizes}
+                      className="w-full bg-stone/40 border border-stone-dark rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40" />
+                  </div>
+                )}
+              </div>
+
+              {/* ━━━ Size & Stock System ━━━ */}
+              <div className="border border-stone-dark rounded-lg p-4 space-y-3 bg-stone/20">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-ink/50 uppercase tracking-widest">Size অনুযায়ী Stock</p>
+                  <button
+                    type="button"
+                    onClick={() => setForm(f => ({
+                      ...f,
+                      hasSizes: !f.hasSizes,
+                      sizeVariants: !f.hasSizes && f.sizeVariants.length === 0 ? [{ size: '', stock: '' }] : f.sizeVariants,
+                    }))}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${form.hasSizes ? 'bg-clay' : 'bg-stone-dark'}`}
+                  >
+                    <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-sand transition-transform ${form.hasSizes ? 'translate-x-4' : 'translate-x-1'}`} />
+                  </button>
                 </div>
+
+                {form.hasSizes ? (
+                  <div className="space-y-2">
+                    <p className="text-xs text-ink/50">প্রতিটি size-এর জন্য নাম ও স্টক দিন। মোট stock auto-calculate হবে।</p>
+
+                    {/* Header row */}
+                    <div className="grid grid-cols-[1fr_100px_32px] gap-2 text-xs font-medium text-ink/50 px-1">
+                      <span>Size</span>
+                      <span>Stock</span>
+                      <span></span>
+                    </div>
+
+                    {form.sizeVariants.map((v, i) => (
+                      <div key={i} className="grid grid-cols-[1fr_100px_32px] gap-2 items-center">
+                        <input
+                          value={v.size}
+                          onChange={e => setForm(f => {
+                            const sv = [...f.sizeVariants]
+                            sv[i] = { ...sv[i], size: e.target.value }
+                            return { ...f, sizeVariants: sv }
+                          })}
+                          placeholder="যেমন: 39, 40, S, M..."
+                          className="bg-stone/40 border border-stone-dark rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40"
+                        />
+                        <input
+                          type="number" min="0"
+                          value={v.stock}
+                          onChange={e => setForm(f => {
+                            const sv = [...f.sizeVariants]
+                            sv[i] = { ...sv[i], stock: e.target.value }
+                            return { ...f, sizeVariants: sv }
+                          })}
+                          placeholder="0"
+                          className="bg-stone/40 border border-stone-dark rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setForm(f => ({ ...f, sizeVariants: f.sizeVariants.filter((_, j) => j !== i) }))}
+                          className="text-ink/30 hover:text-clay p-1 rounded"
+                          disabled={form.sizeVariants.length === 1}
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, sizeVariants: [...f.sizeVariants, { size: '', stock: '' }] }))}
+                      className="flex items-center gap-1.5 text-xs text-clay hover:text-clay-dark font-medium py-1"
+                    >
+                      <Plus size={13} /> আরেকটি size যোগ করুন
+                    </button>
+
+                    {/* Total stock preview */}
+                    <div className="border-t border-stone-dark pt-2 flex items-center justify-between text-sm">
+                      <span className="text-ink/50">মোট Stock:</span>
+                      <span className="font-mono font-semibold text-ink">
+                        {form.sizeVariants.reduce((s, v) => s + (Number(v.stock) || 0), 0)} পিস
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-ink/40">Toggle চালু করুন জুতা, পোশাকের মতো size-ভিত্তিক স্টক রাখতে।</p>
+                )}
               </div>
 
               {/* ━━━ Discount Section ━━━ */}
