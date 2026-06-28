@@ -6,6 +6,7 @@ const orderItemSchema = new mongoose.Schema({
     default: null,
   },
   skuId: { type: String, default: null },
+  categoryKey: { type: String, default: '' },
   name: String,
   price: Number,
   image: String,

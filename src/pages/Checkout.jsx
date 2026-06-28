@@ -20,6 +20,52 @@ function calcShipping(subtotal, promotions) {
   return deliveryCharge
 }
 
+/* ─── Automatic discount rules helper ─── */
+function calcAutoDiscount(items, subtotal, promotions) {
+  if (!promotions?.discountRules?.length) return { discount: 0, appliedRules: [] }
+  const now = new Date()
+  const activeRules = promotions.discountRules.filter(r => {
+    if (!r.enabled) return false
+    if (r.expiry && new Date(r.expiry) < now) return false
+    return true
+  })
+
+  let totalDiscount = 0
+  const appliedRules = []
+
+  for (const rule of activeRules) {
+    let base = 0 // কোন পরিমাণের উপর discount apply হবে
+
+    if (rule.scope === 'all') {
+      base = subtotal
+    } else if (rule.scope === 'minOrder') {
+      if (subtotal < (rule.minOrder || 0)) continue
+      base = subtotal
+    } else if (rule.scope === 'category') {
+      // শুধু সেই category-র items-এর মোট দাম
+      base = items
+        .filter(item => item.categoryKey === rule.categoryKey)
+        .reduce((sum, item) => sum + item.price * item.qty, 0)
+      if (base === 0) continue
+    }
+
+    let ruleDiscount = 0
+    if (rule.type === 'percent') {
+      ruleDiscount = Math.round((base * rule.value) / 100)
+    } else {
+      ruleDiscount = rule.value
+    }
+    ruleDiscount = Math.min(ruleDiscount, base)
+    if (ruleDiscount <= 0) continue
+
+    totalDiscount += ruleDiscount
+    appliedRules.push({ ...rule, discount: ruleDiscount, base })
+  }
+
+  totalDiscount = Math.min(totalDiscount, subtotal)
+  return { discount: totalDiscount, appliedRules }
+}
+
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart()
   const { t } = useLanguage()
@@ -78,8 +124,12 @@ export default function Checkout() {
     setAppliedPromo(prev => ({ ...prev, discount: newDiscount }))
   }, [subtotal])
 
+  // Automatic discount rules (Admin Promotions থেকে)
+  const { discount: autoDiscount, appliedRules } = calcAutoDiscount(items, subtotal, promotions)
+
   const promoDiscount = appliedPromo?.discount || 0
-  const discountedSubtotal = subtotal - promoDiscount
+  const totalDiscount = promoDiscount + autoDiscount
+  const discountedSubtotal = subtotal - totalDiscount
   const shipping = calcShipping(discountedSubtotal, promotions)
   const total = discountedSubtotal + shipping
 
@@ -141,6 +191,7 @@ export default function Checkout() {
         items: orderItems,
         subtotal,
         promoCode: appliedPromo?.code || '',
+        discount: totalDiscount,
         shipping,
         total,
       })
@@ -202,7 +253,6 @@ export default function Checkout() {
 
           {/* ── Promo Code Section ── */}
           <div>
-            <h2 className="font-display text-lg text-ink mb-3">প্রোমো কোড</h2>
             {appliedPromo ? (
               <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-md px-4 py-3">
                 <Tag size={16} className="text-green-600 shrink-0" />
@@ -223,30 +273,14 @@ export default function Checkout() {
                 </button>
               </div>
             ) : (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={promoInput}
-                  onChange={e => { setPromoInput(e.target.value.toUpperCase()); setPromoError('') }}
-                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleApplyPromo())}
-                  placeholder="প্রোমো কোড লিখুন"
-                  className="flex-1 bg-sand border border-stone-dark rounded-md px-3.5 py-2.5 text-sm font-mono uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-clay/40"
-                />
-                <button
-                  type="button"
-                  onClick={handleApplyPromo}
-                  disabled={promoApplying || !promoInput.trim()}
-                  className="flex items-center gap-1.5 px-4 py-2.5 bg-ink text-sand text-sm font-medium rounded-md hover:bg-clay transition-colors disabled:opacity-50 shrink-0"
-                >
-                  {promoApplying ? <Loader2 size={14} className="animate-spin" /> : <Tag size={14} />}
-                  Apply
-                </button>
-              </div>
-            )}
-            {promoError && (
-              <p className="text-xs text-clay mt-1.5 flex items-center gap-1">
-                <X size={12} /> {promoError}
-              </p>
+              <PromoSection
+                promoInput={promoInput}
+                setPromoInput={setPromoInput}
+                setPromoError={setPromoError}
+                promoApplying={promoApplying}
+                promoError={promoError}
+                handleApplyPromo={handleApplyPromo}
+              />
             )}
           </div>
 
@@ -299,6 +333,15 @@ export default function Checkout() {
                 <span>{t('cart.subtotal')}</span>
                 <span className="font-mono">৳{subtotal}</span>
               </div>
+              {appliedRules.map((rule, i) => (
+                <div key={i} className="flex justify-between text-green-600 font-medium">
+                  <span className="flex items-center gap-1">
+                    <Tag size={12} />
+                    {rule.label || (rule.type === 'percent' ? `${rule.value}% ছাড়` : `৳${rule.value} ছাড়`)}
+                  </span>
+                  <span className="font-mono">− ৳{rule.discount}</span>
+                </div>
+              ))}
               {promoDiscount > 0 && (
                 <div className="flex justify-between text-green-600 font-medium">
                   <span className="flex items-center gap-1">
@@ -335,6 +378,53 @@ function Field({ label, name, value, onChange, error, placeholder, as = 'input' 
         className={`w-full bg-sand border rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40 ${error ? 'border-clay' : 'border-stone-dark'}`}
       />
       {error && <p className="text-xs text-clay mt-1">{error}</p>}
+    </div>
+  )
+}
+
+function PromoSection({ promoInput, setPromoInput, setPromoError, promoApplying, promoError, handleApplyPromo }) {
+  const [open, setOpen] = React.useState(false)
+  return (
+    <div>
+      {!open ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-1.5 text-sm text-clay hover:underline"
+        >
+          <Tag size={13} />
+          প্রোমো কোড আছে?
+        </button>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-ink">প্রোমো কোড</p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={promoInput}
+              onChange={e => { setPromoInput(e.target.value.toUpperCase()); setPromoError('') }}
+              onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleApplyPromo())}
+              placeholder="প্রোমো কোড লিখুন"
+              autoFocus
+              className="flex-1 bg-sand border border-stone-dark rounded-md px-3.5 py-2.5 text-sm font-mono uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-clay/40"
+            />
+            <button
+              type="button"
+              onClick={handleApplyPromo}
+              disabled={promoApplying || !promoInput.trim()}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-ink text-sand text-sm font-medium rounded-md hover:bg-clay transition-colors disabled:opacity-50 shrink-0"
+            >
+              {promoApplying ? <Loader2 size={14} className="animate-spin" /> : <Tag size={14} />}
+              Apply
+            </button>
+          </div>
+          {promoError && (
+            <p className="text-xs text-clay flex items-center gap-1">
+              <X size={12} /> {promoError}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }

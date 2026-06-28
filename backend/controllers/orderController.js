@@ -35,6 +35,41 @@ function calcShippingServer(subtotal, promotions) {
   return deliveryCharge
 }
 
+function calcAutoDiscountServer(items, subtotal, promotions) {
+  if (!promotions?.discountRules?.length) return 0
+  const now = new Date()
+  const activeRules = promotions.discountRules.filter(r => {
+    if (!r.enabled) return false
+    if (r.expiry && new Date(r.expiry) < now) return false
+    return true
+  })
+
+  let totalDiscount = 0
+  for (const rule of activeRules) {
+    let base = 0
+    if (rule.scope === 'all') {
+      base = subtotal
+    } else if (rule.scope === 'minOrder') {
+      if (subtotal < (rule.minOrder || 0)) continue
+      base = subtotal
+    } else if (rule.scope === 'category') {
+      base = items
+        .filter(item => item.categoryKey === rule.categoryKey)
+        .reduce((sum, item) => sum + item.price * item.qty, 0)
+      if (base === 0) continue
+    }
+
+    let ruleDiscount = 0
+    if (rule.type === 'percent') {
+      ruleDiscount = Math.round((base * rule.value) / 100)
+    } else {
+      ruleDiscount = rule.value
+    }
+    totalDiscount += Math.min(ruleDiscount, base)
+  }
+  return Math.min(totalDiscount, subtotal)
+}
+
 export async function createOrder(req, res) {
   try {
     const { items, fullName, phone, address, city, paymentMethod, promoCode } = req.body
@@ -54,6 +89,7 @@ export async function createOrder(req, res) {
       resolvedItems.push({
         productId: product?._id || rawId || null,
         skuId: product?.productId || item.skuId || null,
+        categoryKey: product?.categoryKey || item.categoryKey || '',
         name: item.name || product?.name?.bn || product?.name?.en || '',
         price: product ? product.price : Number(item.price) || 0,
         image: item.image || product?.images?.[0] || '',
@@ -92,15 +128,18 @@ export async function createOrder(req, res) {
 
     const discountedSubtotal = subtotal - discount
     const settings = await SiteSettings.findOne()
-    const shipping = calcShippingServer(discountedSubtotal, settings?.promotions)
-    const total = discountedSubtotal + shipping
+    const autoDiscount = calcAutoDiscountServer(resolvedItems, discountedSubtotal, settings?.promotions)
+    const finalSubtotal = discountedSubtotal - autoDiscount
+    const shipping = calcShippingServer(finalSubtotal, settings?.promotions)
+    const total = finalSubtotal + shipping
+    const totalDiscount = discount + autoDiscount
 
     const orderNumber = await uniqueOrderNumber()
     const order = new Order({
       orderNumber,
       user: req.user?._id || null,
       items: resolvedItems, fullName, phone, address, city, paymentMethod,
-      subtotal, discount, promoCode: appliedPromoCode, shipping, total,
+      subtotal, discount: totalDiscount, promoCode: appliedPromoCode, shipping, total,
     })
     const saved = await order.save()
 

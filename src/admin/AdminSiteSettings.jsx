@@ -23,6 +23,7 @@ function fileToDataUrl(file) {
 
 // Resize and compress large images client-side before upload
 const TARGET_MAX_BYTES = 700_000 // ~700KB এর মধ্যে রাখার চেষ্টা করবে
+const MAX_DIMENSION = 1920       // px — এর বেশি হলে scale down করা হবে
 
 function loadImage(dataUrl) {
   return new Promise((res, rej) => {
@@ -124,8 +125,7 @@ function ImagePicker({ label, value, onChange, aspect = 'aspect-video' }) {
     setFileError('')
     setProcessing(true)
     try {
-      // ছবিটা প্রথমে কম্প্রেস করা হয় (বড় ছবি হলে ছোট করে), তারপর সেই কম্প্রেসড
-      // Upload image to Cloudinary via backend. Store URL, not base64.
+      const dataUrl = await compressImageFile(file)
       const result = await api.upload.image(dataUrl, file.name)
       onChange(result.url)
     } catch (e) {

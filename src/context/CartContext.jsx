@@ -35,6 +35,7 @@ export function CartProvider({ children }) {
     // Use MongoDB _id — this is what the order system needs
     const productId = product._id
     const skuId = product.productId || null   // SHOE-001 style ID
+    const categoryKey = product.categoryKey || product.category || ''
     setItems((prev) => {
       const key = `${productId}__${color || 'default'}__${size || 'default'}`
       const existing = prev.find((i) => i.key === key)
@@ -53,6 +54,7 @@ export function CartProvider({ children }) {
           color,
           size,
           qty,
+          categoryKey,             // category-based discount-এর জন্য
         },
       ]
     })
