@@ -26,7 +26,7 @@ app.use(compression())
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'https://ecommerce-new-wheat.vercel.app',
-  'http://localhost:5173/login',
+  'http://localhost:5173',
   'https://ecommerce-f42iomwmk-sajidhasan-webs-projects.vercel.app',
   'https://ecommerce-new-git-main-sajidhasan-webs-projects.vercel.app/',
 ].filter(Boolean)

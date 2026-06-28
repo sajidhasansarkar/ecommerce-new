@@ -6,7 +6,7 @@ import User from '../models/User.js'
 const COOKIE_OPTIONS = {
   httpOnly: true,        // JS দিয়ে অ্যাক্সেস করা যাবে না (XSS protection)
   secure: process.env.NODE_ENV === 'production', // production-এ শুধু HTTPS
-  sameSite: 'strict',   // CSRF protection
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // cross-origin cookie fix
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 দিন (milliseconds)
   path: '/',
 }
