@@ -78,6 +78,7 @@ export default function Login() {
     if (mode === 'register' && !form.name.trim()) { setError(t('login.errName')); return }
     setLoading('email')
     try {
+      const data = mode === 'login'
         ? await api.auth.login(form.email.trim(), form.password)
         : await api.auth.register(form.name.trim(), form.email.trim(), form.password)
       login(data)
