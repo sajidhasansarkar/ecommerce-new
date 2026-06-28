@@ -70,7 +70,24 @@ export default function AdminProducts() {
   const [dragOver, setDragOver] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [migratingIds, setMigratingIds] = useState(false)
   const fileInputRef = useRef(null)
+
+  // যেসব পুরনো প্রোডাক্টে SHOE-001 স্টাইল productId নেই, সেগুলোতে এক ক্লিকে
+  // সব বসিয়ে দেয় — এডমিন অর্ডার লিস্টে MongoDB _id-এর বদলে এই আইডি দেখানোর
+  // জন্যই এটা থাকা জরুরি।
+  async function handleMigrateProductIds() {
+    setMigratingIds(true)
+    setFormError('')
+    try {
+      await api.products.migrateProductIds()
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] })
+    } catch (err) {
+      setFormError(err.message)
+    } finally {
+      setMigratingIds(false)
+    }
+  }
 
   // লিস্ট লোড করতে গিয়ে এরর হলে দেখানোর জন্য — মডালের ফর্ম এরর থেকে আলাদা রাখা হয়েছে
   const error = formError || queryError?.message || ''
@@ -331,12 +348,25 @@ export default function AdminProducts() {
           <h1 className="font-display text-2xl lg:text-3xl text-ink">{t('admin.productManagement')}</h1>
           <p className="text-ink/60 text-sm mt-1">{list.length} products</p>
         </div>
-        <button
-          onClick={openAddModal}
-          className="flex items-center gap-2 bg-clay text-sand px-4 py-2.5 rounded-md text-sm font-medium hover:bg-clay-dark transition-colors"
-        >
-          <Plus size={16} /> {t('admin.newProduct')}
-        </button>
+        <div className="flex items-center gap-2">
+          {list.some(p => !p.productId) && (
+            <button
+              onClick={handleMigrateProductIds}
+              disabled={migratingIds}
+              className="flex items-center gap-2 border border-stone-dark text-ink/70 px-4 py-2.5 rounded-md text-sm font-medium hover:bg-stone transition-colors disabled:opacity-50"
+              title="যেসব প্রোডাক্টে SHOE-001 স্টাইল ID নেই, সেগুলোতে automatically ID বসিয়ে দেবে"
+            >
+              {migratingIds ? <Loader2 size={16} className="animate-spin" /> : null}
+              {migratingIds ? 'আইডি যুক্ত হচ্ছে...' : 'মিসিং প্রোডাক্ট আইডি ঠিক করো'}
+            </button>
+          )}
+          <button
+            onClick={openAddModal}
+            className="flex items-center gap-2 bg-clay text-sand px-4 py-2.5 rounded-md text-sm font-medium hover:bg-clay-dark transition-colors"
+          >
+            <Plus size={16} /> {t('admin.newProduct')}
+          </button>
+        </div>
       </div>
 
       {error && <p className="text-clay text-sm mb-4">{error}</p>}

@@ -1,33 +1,37 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useLanguage } from '../context/LanguageContext.jsx'
 import { Package, DollarSign, AlertTriangle, TrendingUp, ShoppingCart } from 'lucide-react'
 import { api } from '../api.js'
 
 export default function Dashboard() {
   const { t, lang } = useLanguage()
-  const [products, setProducts] = useState([])
-  const [orders, setOrders] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  useEffect(() => {
-    async function load() {
-      try {
-        // ড্যাশবোর্ড স্ট্যাট (total products, low stock, avg price) পুরো ক্যাটালগ
-        // থেকে হিসাব হয়, তাই বড় limit চাওয়া হলো
-        const [prodsRes, ords] = await Promise.all([
-          api.products.list({ limit: 500 }),
-          api.orders.list(),
-        ])
-        setProducts(prodsRes.products ?? prodsRes)
-        setOrders(ords)
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [])
+
+  // ━━━ useQuery দিয়ে fetch ও cache ━━━
+  // প্রথমবার লোড হওয়ার সময়ই শুধু loading skeleton দেখায়; পরে এই ট্যাবে
+  // ফিরে আসলে cache থেকে ডেটা সাথে সাথে দেখায়, আবার নতুন করে লোডিং দেখায় না।
+  const {
+    data: products = [],
+    isLoading: productsLoading,
+    error: productsError,
+  } = useQuery({
+    queryKey: ['admin-dashboard-products'],
+    // ড্যাশবোর্ড স্ট্যাট (total products, low stock, avg price) পুরো ক্যাটালগ
+    // থেকে হিসাব হয়, তাই বড় limit চাওয়া হলো
+    queryFn: () => api.products.list({ limit: 500 }).then((res) => res.products ?? res),
+  })
+
+  const {
+    data: orders = [],
+    isLoading: ordersLoading,
+    error: ordersError,
+  } = useQuery({
+    queryKey: ['admin-dashboard-orders'],
+    queryFn: () => api.orders.list(),
+  })
+
+  const loading = productsLoading || ordersLoading
+  const error = productsError?.message || ordersError?.message || ''
 
   if (loading) return (
     <div className="animate-pulse">

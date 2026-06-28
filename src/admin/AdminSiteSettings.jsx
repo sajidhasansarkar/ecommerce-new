@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Loader2, Save, Image, Upload, Link as LinkIcon, RefreshCw,
   Plus, Trash2, GripVertical, Eye, EyeOff, ChevronDown,
@@ -339,7 +340,6 @@ export default function AdminSiteSettings() {
   const { t, lang } = useLanguage()
   const { setLogoImage: setContextLogoImage } = useSiteSettings()
   const { categories } = useCategories()
-  const [loading, setLoading]   = useState(true)
   const [saving, setSaving]     = useState(false)
   const [success, setSuccess]   = useState(false)
   const [error, setError]       = useState('')
@@ -353,28 +353,41 @@ export default function AdminSiteSettings() {
   const [newMarquee,    setNewMarquee]    = useState('')
   const [logoImage,     setLogoImage]     = useState('')
 
+  // ━━━ useQuery দিয়ে fetch ও cache ━━━ settings এডিটেবল ফর্ম স্টেটে থাকে,
+  // তাই ডেটা এলে নিচের useEffect দিয়ে ফর্মে sync করা হয়। cache hit হলে এই
+  // sync প্রায় instant হয়, তাই এই ট্যাবে ফিরে এলে আবার লোডিং দেখায় না।
+  const {
+    data: settings,
+    isLoading: loading,
+    error: queryError,
+  } = useQuery({
+    queryKey: ['admin-site-settings'],
+    queryFn: () => api.settings.get(),
+  })
+
   useEffect(() => {
-    api.settings.get()
-      .then(s => {
-        setHeroImage(s.heroImage || '')
-        // categoryImages আসতে পারে [{key,image}] array অথবা পুরনো {shoes,bags} object
-        if (Array.isArray(s.categoryImages)) {
-          setCategoryImages(s.categoryImages)
-        } else if (s.categoryImages && typeof s.categoryImages === 'object') {
-          // পুরনো format migrate করি
-          const migrated = Object.entries(s.categoryImages)
-            .filter(([, img]) => img)
-            .map(([key, image]) => ({ key, image }))
-          setCategoryImages(migrated)
-        }
-        setHeroSlider(s.heroSlider || [])
-        setPromoBanner(s.promoBanner || { image: '', title: '', subtitle: '', link: '/shop' })
-        setMarqueeItems(s.marqueeItems || DEFAULT_MARQUEE)
-        setLogoImage(s.logoImage || '')
-      })
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false))
-  }, [])
+    if (!settings) return
+    const s = settings
+    setHeroImage(s.heroImage || '')
+    // categoryImages আসতে পারে [{key,image}] array অথবা পুরনো {shoes,bags} object
+    if (Array.isArray(s.categoryImages)) {
+      setCategoryImages(s.categoryImages)
+    } else if (s.categoryImages && typeof s.categoryImages === 'object') {
+      // পুরনো format migrate করি
+      const migrated = Object.entries(s.categoryImages)
+        .filter(([, img]) => img)
+        .map(([key, image]) => ({ key, image }))
+      setCategoryImages(migrated)
+    }
+    setHeroSlider(s.heroSlider || [])
+    setPromoBanner(s.promoBanner || { image: '', title: '', subtitle: '', link: '/shop' })
+    setMarqueeItems(s.marqueeItems || DEFAULT_MARQUEE)
+    setLogoImage(s.logoImage || '')
+  }, [settings])
+
+  useEffect(() => {
+    if (queryError) setError(queryError.message)
+  }, [queryError])
 
   const sliderForPreview = heroSlider.length > 0 ? heroSlider : (heroImage ? [heroImage] : [])
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Loader2, Save, Plus, Trash2, CheckCircle2,
   Truck, Percent, Calendar, Package, ChevronDown, X
@@ -344,7 +345,6 @@ function DiscountRuleCard({ rule, onChange, onDelete, categories, index }) {
 export default function AdminPromotions() {
   const { categories } = useCategories()
 
-  const [loading, setLoading]   = useState(true)
   const [saving, setSaving]     = useState(false)
   const [success, setSuccess]   = useState(false)
   const [error, setError]       = useState('')
@@ -354,20 +354,34 @@ export default function AdminPromotions() {
   const [freeDeliveryEnabled,   setFreeDeliveryEnabled]   = useState(true)
   const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState(1500)
   const [discountRules,         setDiscountRules]         = useState([])
+  const [hydrated, setHydrated] = useState(false)
+
+  // ━━━ useQuery দিয়ে fetch ও cache ━━━ settings এডিটেবল ফর্ম স্টেটে থাকে,
+  // তাই ডেটা এলে নিচের useEffect দিয়ে ফর্মে sync করা হয়। cache hit হলে এই
+  // sync প্রায় instant হয়, তাই এই ট্যাবে ফিরে এলে আবার লোডিং দেখায় না।
+  const {
+    data: settings,
+    isLoading: loading,
+    error: queryError,
+  } = useQuery({
+    queryKey: ['admin-promotions-settings'],
+    queryFn: () => api.settings.get(),
+  })
 
   useEffect(() => {
-    api.settings.get()
-      .then(s => {
-        const p = s.promotions || {}
-        setDeliveryEnabled(p.deliveryEnabled ?? true)
-        setDeliveryCharge(p.deliveryCharge ?? 80)
-        setFreeDeliveryEnabled(p.freeDeliveryEnabled ?? true)
-        setFreeDeliveryThreshold(p.freeDeliveryThreshold ?? 1500)
-        setDiscountRules(p.discountRules || [])
-      })
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false))
-  }, [])
+    if (!settings) return
+    const p = settings.promotions || {}
+    setDeliveryEnabled(p.deliveryEnabled ?? true)
+    setDeliveryCharge(p.deliveryCharge ?? 80)
+    setFreeDeliveryEnabled(p.freeDeliveryEnabled ?? true)
+    setFreeDeliveryThreshold(p.freeDeliveryThreshold ?? 1500)
+    setDiscountRules(p.discountRules || [])
+    setHydrated(true)
+  }, [settings])
+
+  useEffect(() => {
+    if (queryError) setError(queryError.message)
+  }, [queryError])
 
   function addRule() {
     setDiscountRules(prev => [...prev, {

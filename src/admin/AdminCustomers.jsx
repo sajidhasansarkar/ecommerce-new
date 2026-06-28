@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Users, Mail, Phone, Calendar, ShieldCheck, Chrome, Facebook, UserCircle, Search } from 'lucide-react'
 import { api } from '../api.js'
 import { useLanguage } from '../context/LanguageContext.jsx'
@@ -39,18 +40,18 @@ function Avatar({ user, size = 'md' }) {
 
 export default function AdminCustomers() {
   const { t } = useLanguage()
-  const [users, setUsers]       = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [error, setError]       = useState('')
+  // ━━━ useQuery দিয়ে fetch ও cache ━━━ এই ট্যাবে ফিরে আসলে আবার লোডিং দেখাবে না
+  const {
+    data: users = [],
+    isLoading: loading,
+    error: queryError,
+  } = useQuery({
+    queryKey: ['admin-users'],
+    queryFn: () => api.auth.users(),
+  })
+  const error = queryError?.message || ''
   const [search, setSearch]     = useState('')
   const [filter, setFilter]     = useState('all') // all | google | facebook | email | otp
-
-  useEffect(() => {
-    api.auth.users()
-      .then(data => setUsers(data))
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false))
-  }, [])
 
   const filtered = users.filter(u => {
     const matchSearch =

@@ -54,6 +54,9 @@ export const api = {
     create: (data) => request('POST', '/api/products', data),
     update: (id, data) => request('PUT', `/api/products/${id}`, data),
     delete: (id) => request('DELETE', `/api/products/${id}`),
+    // পুরনো প্রোডাক্টে SHOE-001 স্টাইল productId না থাকলে, একবার চালিয়ে সব
+    // মিসিং productId বসিয়ে দেয় — Admin Products পেজের বাটন থেকে কল হয়
+    migrateProductIds: () => request('POST', '/api/products/migrate/product-ids'),
   },
   orders: {
     create: (data) => request('POST', '/api/orders', data),

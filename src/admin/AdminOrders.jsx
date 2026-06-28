@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Eye, Trash2, Pencil, Download, X, Loader2, AlertTriangle, Check, FileText } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext.jsx'
+import { useSiteSettings } from '../context/SiteSettingsContext.jsx'
 import { api } from '../api.js'
 
 const STATUS_COLORS = {
@@ -28,7 +30,10 @@ function formatDateEn(d) {
 }
 
 /* ─── Build receipt HTML ─── */
-function buildReceiptHTML(order) {
+// logoImage ও storeName ওয়েবসাইটের Site Settings থেকে আসে — তাই দোকানের
+// লোগো/নাম বদলালে নতুন প্রিন্ট হওয়া স্লিপেও সাথে সাথে রিফ্লেক্ট হবে, হার্ডকোড
+// করা "My Shop" টেক্সট থাকবে না।
+function buildReceiptHTML(order, { logoImage = '', storeName = 'My Shop' } = {}) {
   const statusLabel = STATUS_EN[order.status] || order.status
   const paymentLabel = PAYMENT_EN[order.paymentMethod] || order.paymentMethod
 
@@ -39,16 +44,30 @@ function buildReceiptHTML(order) {
     cancelled:  'background:#fee2e2;color:#b91c1c',
   }[order.status] || 'background:#f3f4f6;color:#374151'
 
-  const rows = order.items.map((item, i) => `
+  const rows = order.items.map((item, i) => {
+    // skuId (যেমন SHOE-001) থাকলেই দেখাও — পুরনো অর্ডারে না থাকলে কিছু দেখাবে না,
+    // ভুলভাবে MongoDB-র internal _id দেখানো হবে না।
+    const skuLine = item.skuId ? `<div style="font-size:11px;color:#b5a99a;margin-top:2px;font-family:monospace">${item.skuId}</div>` : ''
+    const variantLine = item.size || item.color
+      ? `<div style="font-size:11px;color:#9a8f85;margin-top:2px">${[item.size && `Size: ${item.size}`, item.color && `Color: ${item.color}`].filter(Boolean).join(' · ')}</div>`
+      : ''
+    return `
     <tr style="background:${i % 2 === 0 ? '#fff' : '#fafaf9'}">
       <td style="padding:10px 12px;border-bottom:1px solid #f0ede8">
         <div style="font-weight:600;color:#1a1a1a">${item.name}</div>
-        ${item.size || item.color ? `<div style="font-size:11px;color:#9a8f85;margin-top:2px">${[item.size && `Size: ${item.size}`, item.color && `Color: ${item.color}`].filter(Boolean).join(' · ')}</div>` : ''}
+        ${skuLine}
+        ${variantLine}
       </td>
       <td style="padding:10px 12px;border-bottom:1px solid #f0ede8;text-align:center;color:#555">${item.qty}</td>
       <td style="padding:10px 12px;border-bottom:1px solid #f0ede8;text-align:right;color:#555">৳${item.price.toLocaleString()}</td>
       <td style="padding:10px 12px;border-bottom:1px solid #f0ede8;text-align:right;font-weight:600;color:#1a1a1a">৳${(item.price * item.qty).toLocaleString()}</td>
-    </tr>`).join('')
+    </tr>`
+  }).join('')
+
+  // লোগো ছবি থাকলে <img>, না থাকলে আগের মতো টেক্সট ব্র্যান্ড — দুটোতেই storeName ডাইনামিক
+  const brandHTML = logoImage
+    ? `<img src="${logoImage}" alt="${storeName}" style="height:40px;max-width:180px;object-fit:contain"/>`
+    : `<div class="brand">${storeName}<span>.</span></div>`
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -95,7 +114,7 @@ function buildReceiptHTML(order) {
 <body>
 <div class="page">
   <div class="header">
-    <div class="brand">My Shop<span>.</span></div>
+    ${brandHTML}
     <div class="receipt-label">
       <h2>Order Receipt</h2>
       <div class="order-num">${order.orderNumber}</div>
@@ -154,7 +173,7 @@ function buildReceiptHTML(order) {
   </div>
 
   <div class="footer">
-    <strong>My Shop</strong> &nbsp;·&nbsp; hello@yourstore.com
+    <strong>${storeName}</strong>
     <br/>Thank you for your order! Please keep this receipt.
   </div>
 </div>
@@ -169,8 +188,8 @@ function buildReceiptHTML(order) {
 }
 
 /* ─── Download receipt as HTML file ─── */
-function downloadReceipt(order) {
-  const html = buildReceiptHTML(order)
+function downloadReceipt(order, options) {
+  const html = buildReceiptHTML(order, options)
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -363,9 +382,9 @@ function ViewModal({ order, onClose, onDownload, onEdit, onDelete, onStatusChang
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-ink font-medium truncate">{item.name}</p>
-                    {item.productId && (
+                    {item.skuId && (
                       <p className="text-ink/40 text-[10px] font-mono mt-0.5">
-                        {item.skuId || String(item.productId).slice(-8).toUpperCase()}
+                        {item.skuId}
                       </p>
                     )}
                     <p className="text-ink/50 text-xs">
@@ -436,8 +455,8 @@ function InfoRow({ label, value }) {
 /* ─── Main Component ─── */
 export default function AdminOrders() {
   const { t } = useLanguage()
-  const [orders, setOrders] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { logoImage } = useSiteSettings()
+  const queryClient = useQueryClient()
   const [filter, setFilter] = useState('all')
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [editingOrder, setEditingOrder] = useState(null)
@@ -450,21 +469,31 @@ export default function AdminOrders() {
     setTimeout(() => setToast(''), 3000)
   }
 
-  async function loadOrders() {
-    try {
-      const data = await api.orders.list(filter !== 'all' ? { status: filter } : {})
-      setOrders(data)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+  // ━━━ useQuery দিয়ে fetch ও cache ━━━ filter বদলালে queryKey বদলে যায় তাই
+  // নতুন করে fetch হয়, কিন্তু আগে ফেচ করা filter-এ ফিরে গেলে cache থেকে
+  // instant দেখায়। mutation-এর পর নিচে queryClient.setQueryData দিয়ে cache
+  // সরাসরি বদলে দেওয়া হয়, তাই পুরো পেজ আবার লোডিং দেখায় না।
+  const queryKey = ['admin-orders', filter]
+  const {
+    data: orders = [],
+    isLoading: loading,
+  } = useQuery({
+    queryKey,
+    queryFn: () => api.orders.list(filter !== 'all' ? { status: filter } : {}),
+  })
+
+  function setOrders(updater) {
+    queryClient.setQueryData(queryKey, (prev = []) => (
+      typeof updater === 'function' ? updater(prev) : updater
+    ))
   }
 
-  useEffect(() => {
-    setLoading(true)
-    loadOrders()
-  }, [filter])
+  // mutation-এর পর বর্তমান filter ছাড়া বাকি filter ট্যাবের cache stale হয়ে
+  // যায় (যেমন 'all' ট্যাবে পুরনো status দেখাবে), তাই বাকিগুলো invalidate করি —
+  // বর্তমান ট্যাব setOrders দিয়ে instant আপডেট থাকে, বাকিগুলো পরে ভিজিট করলে fresh fetch হবে
+  function invalidateOtherOrderTabs() {
+    queryClient.invalidateQueries({ queryKey: ['admin-orders'], exact: false })
+  }
 
   async function handleStatusChange(orderId, newStatus) {
     setUpdatingId(orderId)
@@ -472,6 +501,7 @@ export default function AdminOrders() {
       await api.orders.updateStatus(orderId, newStatus)
       setOrders(prev => prev.map(o => o._id === orderId ? { ...o, status: newStatus } : o))
       if (selectedOrder?._id === orderId) setSelectedOrder(o => ({ ...o, status: newStatus }))
+      invalidateOtherOrderTabs()
       showToast(t("admin.statusUpdated"))
     } catch (err) {
       console.error(err)
@@ -485,6 +515,7 @@ export default function AdminOrders() {
       await api.orders.delete(orderId)
       setOrders(prev => prev.filter(o => o._id !== orderId))
       setSelectedOrder(null)
+      invalidateOtherOrderTabs()
       showToast(t("admin.orderDeleted"))
     } catch (err) {
       console.error(err)
@@ -497,6 +528,7 @@ export default function AdminOrders() {
     try {
       const res = await api.orders.deleteCancelled()
       setOrders(prev => prev.filter(o => o.status !== 'cancelled'))
+      invalidateOtherOrderTabs()
       showToast(res.message || t("admin.cancelledOrdersDeleted"))
     } catch (err) {
       console.error(err)
@@ -508,6 +540,7 @@ export default function AdminOrders() {
   function handleSaved(updated) {
     setOrders(prev => prev.map(o => o._id === updated._id ? updated : o))
     if (selectedOrder?._id === updated._id) setSelectedOrder(updated)
+    invalidateOtherOrderTabs()
     setEditingOrder(null)
     showToast(t("admin.orderUpdated"))
   }
@@ -563,7 +596,7 @@ export default function AdminOrders() {
         <ViewModal
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
-          onDownload={() => { downloadReceipt(selectedOrder); showToast(t("admin.receiptDownloading")) }}
+          onDownload={() => { downloadReceipt(selectedOrder, { logoImage, storeName: t('brand.name') }); showToast(t("admin.receiptDownloading")) }}
           onEdit={() => setEditingOrder(selectedOrder)}
           onDelete={() => setConfirm({ type: 'delete', id: selectedOrder._id })}
           onStatusChange={handleStatusChange}
@@ -663,9 +696,11 @@ export default function AdminOrders() {
                             )}
                             <div className="min-w-0">
                               <p className="text-ink text-xs font-medium truncate max-w-[150px]">{item.name}</p>
-                              <p className="text-ink/40 text-[10px] font-mono">
-                                {item.skuId || (item.productId ? String(item.productId).slice(-8).toUpperCase() : '—')}
-                              </p>
+                              {item.skuId && (
+                                <p className="text-ink/40 text-[10px] font-mono">
+                                  {item.skuId}
+                                </p>
+                              )}
                               <p className="text-ink/40 text-[10px]">
                                 {item.size && `${item.size} · `}qty: {item.qty}
                               </p>
@@ -685,7 +720,7 @@ export default function AdminOrders() {
                       <div className="flex items-center justify-end gap-1">
                         {/* Download receipt directly from table row */}
                         <button
-                          onClick={() => { downloadReceipt(o); showToast(t("admin.receiptDownloading")) }}
+                          onClick={() => { downloadReceipt(o, { logoImage, storeName: t('brand.name') }); showToast(t("admin.receiptDownloading")) }}
                           title={t("admin.receiptDownload")}
                           className="tap-tight p-1.5 text-ink/40 hover:text-clay transition-colors">
                           <Download size={14} />

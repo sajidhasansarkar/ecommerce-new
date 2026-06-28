@@ -75,10 +75,10 @@ export default function ProductCard({ product }) {
           {t('product.addToCart')}
         </button>
 
-        {/* Mobile: always-visible icon button — discount থাকলে top-right-এ sticker আছে, তাই এটা সরিয়ে top-left-এ রাখলাম */}
+        {/* Mobile: always-visible icon button — badge/discount sticker এর row এড়াতে নিচের দিকে bottom-left-এ ফিক্সড রাখা হলো, যাতে কোনো ব্যাজের সাথে ওভারল্যাপ না হয় */}
         <button
           onClick={handleQuickAdd}
-          className={`sm:hidden absolute top-2 bg-sand/90 backdrop-blur-sm text-ink rounded-full p-2 shadow-sm active:scale-95 transition-transform tap-tight ${discountPct ? 'left-2' : 'right-2'}`}
+          className="sm:hidden absolute bottom-2 left-2 bg-sand/90 backdrop-blur-sm text-ink rounded-full p-2 shadow-sm active:scale-95 transition-transform tap-tight"
           aria-label={t('product.addToCart')}
         >
           <ShoppingBag size={15} />
