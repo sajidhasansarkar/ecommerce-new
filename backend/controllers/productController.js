@@ -43,7 +43,8 @@ export async function getProducts(req, res) {
     if (subcategory && subcategory !== 'all') {
       filter.categoryKey = subcategory
     } else if (category && category !== 'all') {
-      filter.categoryKey = category
+      // Exact match অথবা prefix match — যেমন 'shoes' → 'sports-shoes', 'casual-shoes' সব দেখাবে
+      filter.categoryKey = { $regex: `(^|-)${category}($|-)`, $options: 'i' }
     }
 
     if (req.query.badge) {

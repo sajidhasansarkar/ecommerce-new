@@ -70,8 +70,8 @@ export default function Footer() {
         </div>
 
         <div className="footer-body">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
 
               {/* Brand Column */}
               <div className="footer-col footer-brand-col">
@@ -261,7 +261,13 @@ export default function Footer() {
         /* Footer Wrapper */
         .footer-wrapper {
           position: relative;
-          margin-top: 96px;
+          margin-top: 48px;
+        }
+        @media (min-width: 640px) {
+          .footer-wrapper { margin-top: 64px; }
+        }
+        @media (min-width: 1024px) {
+          .footer-wrapper { margin-top: 80px; }
         }
         .footer-wave {
           line-height: 0;
@@ -278,8 +284,10 @@ export default function Footer() {
           color: #FAF7F2;
         }
 
-        /* Brand */
-        .footer-brand-col { }
+        .footer-brand-col { grid-column: span 2; }
+        @media (min-width: 1024px) {
+          .footer-brand-col { grid-column: span 1; }
+        }
         .footer-logo-wrap { margin-bottom: 12px; }
         .footer-brand-name {
           font-family: 'Fraunces', Georgia, serif;
@@ -289,12 +297,18 @@ export default function Footer() {
           animation: fadeSlideUp 0.6s ease both;
         }
         .footer-brand-logo {
-          height: 64px;
+          height: 44px;
           width: auto;
-          max-width: 220px;
+          max-width: 180px;
           object-fit: contain;
           margin-bottom: 8px;
           animation: fadeSlideUp 0.6s ease both;
+        }
+        @media (min-width: 640px) {
+          .footer-brand-logo { height: 56px; max-width: 200px; }
+        }
+        @media (min-width: 1024px) {
+          .footer-brand-logo { height: 64px; max-width: 220px; }
         }
         .footer-brand-line {
           width: 40px;
@@ -310,9 +324,12 @@ export default function Footer() {
         }
         .footer-desc {
           color: rgba(250,247,242,0.55);
-          font-size: 0.8rem;
-          line-height: 1.7;
-          margin-bottom: 14px;
+          font-size: 0.75rem;
+          line-height: 1.6;
+          margin-bottom: 10px;
+        }
+        @media (min-width: 640px) {
+          .footer-desc { font-size: 0.8rem; margin-bottom: 14px; }
         }
 
         /* Contact info */
@@ -363,12 +380,15 @@ export default function Footer() {
         /* Columns */
         .footer-col { }
         .footer-col-title {
-          font-size: 0.78rem;
+          font-size: 0.72rem;
           font-weight: 600;
-          letter-spacing: 0.1em;
+          letter-spacing: 0.08em;
           text-transform: uppercase;
           color: rgba(250,247,242,0.9);
-          margin-bottom: 16px;
+          margin-bottom: 10px;
+        }
+        @media (min-width: 640px) {
+          .footer-col-title { font-size: 0.78rem; letter-spacing: 0.1em; margin-bottom: 16px; }
         }
         .footer-title-bar {
           width: 28px;
@@ -389,7 +409,10 @@ export default function Footer() {
           margin: 0;
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 7px;
+        }
+        @media (min-width: 640px) {
+          .footer-links { gap: 10px; }
         }
         .footer-link-item {
           display: flex;
