@@ -73,9 +73,9 @@ function PromoCard({ promo, onEdit, onDelete, onToggle, t }) {
           <CopyButton text={promo.code} />
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {isExpired && <span className="text-[11px] text-red-500 bg-red-100 px-2 py-0.5 rounded-full font-medium">Expired</span>}
-          {isExhausted && !isExpired && <span className="text-[11px] text-orange-500 bg-orange-100 px-2 py-0.5 rounded-full font-medium">Limit শেষ</span>}
-          {isActive && <span className="text-[11px] text-green-600 bg-green-100 px-2 py-0.5 rounded-full font-medium">Active</span>}
+          {isExpired && <span className="text-[11px] text-red-500 bg-red-100 px-2 py-0.5 rounded-full font-medium">{t('admin.promoExpiredBadge')}</span>}
+          {isExhausted && !isExpired && <span className="text-[11px] text-orange-500 bg-orange-100 px-2 py-0.5 rounded-full font-medium">{t('admin.promoLimitEndBadge')}</span>}
+          {isActive && <span className="text-[11px] text-green-600 bg-green-100 px-2 py-0.5 rounded-full font-medium">{t('admin.promoActiveBadge')}</span>}
           <Switch enabled={promo.enabled} onChange={() => onToggle(promo)} />
           <button onClick={() => onEdit(promo)} className="px-3 py-1 text-xs text-ink/60 hover:text-clay border border-stone-dark hover:border-clay/40 rounded-lg transition-colors">
             {t('admin.promoEdit')}
@@ -94,7 +94,7 @@ function PromoCard({ promo, onEdit, onDelete, onToggle, t }) {
             {promo.type === 'percent' ? `${promo.value}%` : `৳${promo.value}`}
           </span>
           <span className="text-xs text-ink/50">
-            {promo.type === 'percent' ? '%' : '৳'} ছাড়
+            {t('admin.promoDiscountSuffix')}
           </span>
         </div>
 
@@ -346,11 +346,11 @@ export default function AdminPromoCodes() {
       if (editTarget) {
         const updated = await api.promo.update(editTarget._id, form)
         setCodes(prev => prev.map(c => c._id === updated._id ? updated : c))
-        flash('প্রোমো কোড আপডেট হয়েছে!')
+        flash(t('admin.promoUpdated'))
       } else {
         const created = await api.promo.create(form)
         setCodes(prev => [created, ...prev])
-        flash('নতুন প্রোমো কোড তৈরি হয়েছে!')
+        flash(t('admin.promoCreated'))
       }
       setShowForm(false)
       setEditTarget(null)
@@ -362,11 +362,11 @@ export default function AdminPromoCodes() {
   }
 
   async function handleDelete(id) {
-    if (!window.confirm('এই প্রোমো কোডটি ডিলিট করবেন?')) return
+    if (!window.confirm(t('admin.promoConfirmDelete'))) return
     try {
       await api.promo.delete(id)
       setCodes(prev => prev.filter(c => c._id !== id))
-      flash('ডিলিট হয়েছে।')
+      flash(t('admin.promoDeleted'))
     } catch (e) {
       setPageError(e.message)
     }
@@ -485,10 +485,10 @@ export default function AdminPromoCodes() {
       {/* Usage tip */}
       {codes.length > 0 && (
         <div className="mt-6 p-4 bg-stone/60 border border-stone-dark rounded-xl text-xs text-ink/50 space-y-1">
-          <p className="font-medium text-ink/70">💡 ব্যবহারের নিয়ম</p>
-          <p>• কাস্টমার চেকআউটের সময় প্রোমো কোড বক্সে কোডটি লিখে Apply করবে।</p>
-          <p>• প্রতিটি অর্ডারে একটিই প্রোমো কোড ব্যবহার করা যাবে।</p>
-          <p>• কোড apply হলে সাথে সাথে ডিসকাউন্ট বাদ দিয়ে মোট দেখাবে।</p>
+          <p className="font-medium text-ink/70">{t('admin.promoTipTitle')}</p>
+          <p>• {t('admin.promoTip1')}</p>
+          <p>• {t('admin.promoTip2')}</p>
+          <p>• {t('admin.promoTip3')}</p>
         </div>
       )}
     </div>
