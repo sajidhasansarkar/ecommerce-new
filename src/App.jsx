@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar.jsx'
 import Footer from './components/Footer.jsx'
 import Toast from './components/Toast.jsx'
+import ScrollToTop from './components/ScrollToTop.jsx'
 import { useLanguage } from './context/LanguageContext.jsx'
 
 // কাস্টমার-ফেসিং পেজ — lazy load করা হয়েছে যাতে প্রথম ভিজিটেই পুরো অ্যাডমিন
@@ -25,6 +26,7 @@ const AdminCustomers    = lazy(() => import('./admin/AdminCustomers.jsx'))
 const AdminSiteSettings = lazy(() => import('./admin/AdminSiteSettings.jsx'))
 const AdminCategories   = lazy(() => import('./admin/AdminCategories.jsx'))
 const AdminPromotions   = lazy(() => import('./admin/AdminPromotions.jsx'))
+const AdminPromoCodes   = lazy(() => import('./admin/AdminPromoCodes.jsx'))
 
 function PageLoading() {
   return (
@@ -36,45 +38,49 @@ function PageLoading() {
 
 export default function App() {
   return (
-    <Suspense fallback={<PageLoading />}>
-      <Routes>
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="customers" element={<AdminCustomers />} />
-          <Route path="settings" element={<AdminSiteSettings />} />
-          <Route path="categories" element={<AdminCategories />} />
-          <Route path="promotions" element={<AdminPromotions />} />
-        </Route>
+    <>
+      <ScrollToTop />
+      <Suspense fallback={<PageLoading />}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="customers" element={<AdminCustomers />} />
+            <Route path="settings" element={<AdminSiteSettings />} />
+            <Route path="categories" element={<AdminCategories />} />
+            <Route path="promotions" element={<AdminPromotions />} />
+            <Route path="promo-codes" element={<AdminPromoCodes />} />
+          </Route>
 
-        <Route
-          path="*"
-          element={
-            <div className="min-h-screen flex flex-col">
-              <Navbar />
-              <main className="flex-1">
-                <Suspense fallback={<PageLoading />}>
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/shop" element={<Shop />} />
-                    <Route path="/product/:id" element={<ProductDetail />} />
-                    <Route path="/cart" element={<Cart />} />
-                    <Route path="/checkout" element={<Checkout />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Suspense>
-              </main>
-              <Footer />
-              <Toast />
-            </div>
-          }
-        />
-      </Routes>
-    </Suspense>
+          <Route
+            path="*"
+            element={
+              <div className="min-h-screen flex flex-col">
+                <Navbar />
+                <main className="flex-1">
+                  <Suspense fallback={<PageLoading />}>
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/shop" element={<Shop />} />
+                      <Route path="/product/:id" element={<ProductDetail />} />
+                      <Route path="/cart" element={<Cart />} />
+                      <Route path="/checkout" element={<Checkout />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/about" element={<About />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
+                </main>
+                <Footer />
+                <Toast />
+              </div>
+            }
+          />
+        </Routes>
+      </Suspense>
+    </>
   )
 }
 

@@ -2,10 +2,10 @@ import mongoose from 'mongoose'
 
 const orderItemSchema = new mongoose.Schema({
   productId: {
-    type: mongoose.Schema.Types.Mixed, // ObjectId or string — flexible for any source
+    type: mongoose.Schema.Types.Mixed,
     default: null,
   },
-  skuId: { type: String, default: null },  // SHOE-001 style product ID
+  skuId: { type: String, default: null },
   name: String,
   price: Number,
   image: String,
@@ -25,6 +25,8 @@ const orderSchema = new mongoose.Schema(
     city: { type: String, required: true },
     paymentMethod: { type: String, enum: ['cod', 'bkash'], default: 'cod' },
     subtotal: { type: Number, required: true },
+    discount: { type: Number, default: 0 },       // প্রোমো কোড থেকে ডিসকাউন্ট
+    promoCode: { type: String, default: '' },      // কোন প্রোমো কোড ব্যবহার হয়েছে
     shipping: { type: Number, required: true, default: 0 },
     total: { type: Number, required: true },
     status: {

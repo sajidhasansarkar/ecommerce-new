@@ -12,6 +12,7 @@ import authRoutes from './routes/authRoutes.js'
 import settingsRoutes from './routes/settingsRoutes.js'
 import categoryRoutes from './routes/categoryRoutes.js'
 import uploadRoutes from './routes/uploadRoutes.js'
+import promoRoutes from './routes/promoRoutes.js'
 
 dotenv.config()
 connectDB()
@@ -19,8 +20,6 @@ connectDB()
 const app = express()
 
 app.use(helmet())
-// gzip/brotli compression — JSON রেসপন্স সহ সবকিছু কম্প্রেস হয়ে যাবে,
-// বিশেষ করে প্রোডাক্ট লিস্টের মতো বড় JSON রেসপন্সে এটা বড় পার্থক্য আনে
 app.use(compression())
 
 const allowedOrigins = [
@@ -33,17 +32,11 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow no origin (mobile apps, Postman)
     if (!origin) return callback(null, true)
-    
-    // Allow exact matches
     if (allowedOrigins.includes(origin)) return callback(null, true)
-    
-    // Allow ALL Vercel preview deployments for your project
     if (origin.match(/https:\/\/ecommerce-new.*\.vercel\.app$/)) {
       return callback(null, true)
     }
-    
     callback(new Error(`CORS blocked: ${origin}`))
   },
   credentials: true,
@@ -59,6 +52,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/settings', settingsRoutes)
 app.use('/api/categories', categoryRoutes)
 app.use('/api/upload', uploadRoutes)
+app.use('/api/promo', promoRoutes)
 
 app.get('/', (req, res) => {
   res.send('আমার শপ API চলছে ✓')

@@ -1,5 +1,6 @@
 import Order from '../models/Order.js'
 import Product from '../models/Product.js'
+import PromoCode from '../models/PromoCode.js'
 import SiteSettings from '../models/SiteSettings.js'
 import mongoose from 'mongoose'
 
@@ -21,9 +22,6 @@ async function uniqueOrderNumber(attempt = 0) {
   return exists ? uniqueOrderNumber(attempt + 1) : num
 }
 
-// সাইট সেটিংসের promotions থেকে শিপিং চার্জ ক্যালকুলেট করে — Checkout.jsx-এর
-// calcShipping-এর মতোই লজিক, কিন্তু এটা সার্ভারে চলে তাই client পুরনো/cached
-// promotions নিয়ে থাকলেও order সবসময় ডেটাবেসের লেটেস্ট রেট অনুযায়ী হিসাব হবে।
 function calcShippingServer(subtotal, promotions) {
   if (!promotions) return subtotal >= 1500 || subtotal === 0 ? 0 : 80
   const {
@@ -39,17 +37,12 @@ function calcShippingServer(subtotal, promotions) {
 
 export async function createOrder(req, res) {
   try {
-    const { items, fullName, phone, address, city, paymentMethod } = req.body
+    const { items, fullName, phone, address, city, paymentMethod, promoCode } = req.body
     if (!items || items.length === 0) {
       return res.status(400).json({ message: 'কার্ট খালি, অর্ডার করা যাবে না' })
     }
 
     // ━━━ Server-side re-validation ━━━
-    // client থেকে আসা price/subtotal/shipping/total কখনো সরাসরি বিশ্বাস করা হয় না।
-    // প্রতিটা item-এর জন্য আসল প্রোডাক্ট DB থেকে টেনে বর্তমান দাম ও skuId (SHOE-001
-    // স্টাইল productId) বসানো হয়, তারপর সেই দাম দিয়েই subtotal/shipping/total
-    // recalculate করা হয়। এভাবে delivery charge সেটিংস বদলালে সাথে সাথেই নতুন
-    // অর্ডারে effect পড়বে, এবং client থেকে দাম কারচুপি করার সুযোগও থাকে না।
     const resolvedItems = []
     for (const item of items) {
       const rawId = item.productId || item.id || item._id
@@ -57,15 +50,11 @@ export async function createOrder(req, res) {
       if (rawId && mongoose.Types.ObjectId.isValid(rawId)) {
         product = await Product.findById(rawId)
       }
-
       const qty = Math.max(1, Number(item.qty) || Number(item.quantity) || 1)
-
       resolvedItems.push({
         productId: product?._id || rawId || null,
-        skuId: product?.productId || item.skuId || null, // SHOE-001 স্টাইল আইডি — সবসময় DB থেকে fresh
+        skuId: product?.productId || item.skuId || null,
         name: item.name || product?.name?.bn || product?.name?.en || '',
-        // প্রোডাক্ট পাওয়া গেলে DB-র বর্তমান দাম নেওয়া হয়; না পাওয়া গেলে (deleted product)
-        // client-এর পাঠানো দামে fallback করা হয়, যাতে অর্ডার সম্পূর্ণ ব্যর্থ না হয়ে যায়।
         price: product ? product.price : Number(item.price) || 0,
         image: item.image || product?.images?.[0] || '',
         color: item.color || '',
@@ -75,20 +64,47 @@ export async function createOrder(req, res) {
     }
 
     const subtotal = resolvedItems.reduce((sum, it) => sum + it.price * it.qty, 0)
+
+    // ━━━ Promo code validation (server-side) ━━━
+    let discount = 0
+    let appliedPromoCode = ''
+    if (promoCode) {
+      const promo = await PromoCode.findOne({ code: promoCode.toUpperCase().trim() })
+      if (promo && promo.enabled) {
+        const notExpired = !promo.expiry || new Date(promo.expiry) >= new Date()
+        const withinLimit = promo.maxUses === 0 || promo.usedCount < promo.maxUses
+        const meetsMinOrder = subtotal >= (promo.minOrder || 0)
+
+        if (notExpired && withinLimit && meetsMinOrder) {
+          if (promo.type === 'percent') {
+            discount = Math.round((subtotal * promo.value) / 100)
+          } else {
+            discount = promo.value
+          }
+          discount = Math.min(discount, subtotal)
+          appliedPromoCode = promo.code
+
+          // usedCount বাড়ানো হচ্ছে
+          await PromoCode.findByIdAndUpdate(promo._id, { $inc: { usedCount: 1 } })
+        }
+      }
+    }
+
+    const discountedSubtotal = subtotal - discount
     const settings = await SiteSettings.findOne()
-    const shipping = calcShippingServer(subtotal, settings?.promotions)
-    const total = subtotal + shipping
+    const shipping = calcShippingServer(discountedSubtotal, settings?.promotions)
+    const total = discountedSubtotal + shipping
 
     const orderNumber = await uniqueOrderNumber()
     const order = new Order({
       orderNumber,
       user: req.user?._id || null,
       items: resolvedItems, fullName, phone, address, city, paymentMethod,
-      subtotal, shipping, total,
+      subtotal, discount, promoCode: appliedPromoCode, shipping, total,
     })
     const saved = await order.save()
 
-    // Stock deduction — order place হওয়ার সাথে সাথে stock কমানো হচ্ছে
+    // Stock deduction
     for (const item of resolvedItems) {
       const rawId = item.productId
       if (!rawId) continue
@@ -102,7 +118,6 @@ export async function createOrder(req, res) {
       const size = item.size || null
 
       if (size && product.sizeVariants && product.sizeVariants.length > 0) {
-        // size-based stock deduction
         const variant = product.sizeVariants.find(v => v.size === size)
         if (variant) {
           variant.stock = Math.max(0, variant.stock - qty)
@@ -111,7 +126,6 @@ export async function createOrder(req, res) {
           await product.save()
         }
       } else {
-        // simple stock deduction
         product.stock = Math.max(0, product.stock - qty)
         await product.save()
       }
@@ -155,10 +169,9 @@ export async function updateOrderStatus(req, res) {
   }
 }
 
-// PUT /api/orders/:id — full order edit
 export async function updateOrder(req, res) {
   try {
-    const allowed = ['fullName','phone','address','city','paymentMethod','status','items','subtotal','shipping','total']
+    const allowed = ['fullName','phone','address','city','paymentMethod','status','items','subtotal','discount','promoCode','shipping','total']
     const update = {}
     allowed.forEach(k => { if (req.body[k] !== undefined) update[k] = req.body[k] })
     const order = await Order.findByIdAndUpdate(req.params.id, update, { new: true })
@@ -169,7 +182,6 @@ export async function updateOrder(req, res) {
   }
 }
 
-// DELETE /api/orders/:id
 export async function deleteOrder(req, res) {
   try {
     const order = await Order.findByIdAndDelete(req.params.id)
@@ -180,7 +192,6 @@ export async function deleteOrder(req, res) {
   }
 }
 
-// DELETE /api/orders/bulk/cancelled — সব cancelled অর্ডার মুছুন
 export async function deleteCancelledOrders(req, res) {
   try {
     const result = await Order.deleteMany({ status: 'cancelled' })

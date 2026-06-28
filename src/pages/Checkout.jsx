@@ -3,15 +3,12 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
 import { useLanguage } from '../context/LanguageContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
-import { CheckCircle2, UserCheck } from 'lucide-react'
+import { CheckCircle2, UserCheck, Tag, X, Loader2 } from 'lucide-react'
 import { api } from '../api.js'
 
 /* ─── Delivery charge helper ─── */
 function calcShipping(subtotal, promotions) {
-  if (!promotions) {
-    // fallback to old hardcoded logic
-    return subtotal >= 1500 || subtotal === 0 ? 0 : 80
-  }
+  if (!promotions) return subtotal >= 1500 || subtotal === 0 ? 0 : 80
   const {
     deliveryEnabled = true,
     deliveryCharge = 80,
@@ -27,14 +24,9 @@ export default function Checkout() {
   const { items, subtotal, clearCart } = useCart()
   const { t } = useLanguage()
   const { user } = useAuth()
-  const navigate = useNavigate()
 
   const [form, setForm] = useState({
-    fullName: '',
-    phone: '',
-    address: '',
-    city: '',
-    paymentMethod: 'cod',
+    fullName: '', phone: '', address: '', city: '', paymentMethod: 'cod',
   })
   const [prefilled, setPrefilled] = useState(false)
   const [errors, setErrors] = useState({})
@@ -44,13 +36,19 @@ export default function Checkout() {
   const [orderId, setOrderId] = useState(null)
   const [promotions, setPromotions] = useState(null)
 
+  // Promo code state
+  const [promoInput, setPromoInput] = useState('')
+  const [promoApplying, setPromoApplying] = useState(false)
+  const [promoError, setPromoError] = useState('')
+  const [appliedPromo, setAppliedPromo] = useState(null)
+  // appliedPromo: { code, label, type, value, discount }
+
   useEffect(() => {
     api.settings.get()
       .then((s) => setPromotions(s.promotions || null))
       .catch(() => {})
   }, [])
 
-  // Auto-fill form from logged-in user's profile data
   useEffect(() => {
     if (user) {
       const hasData = user.name || user.phone || user.address
@@ -67,8 +65,43 @@ export default function Checkout() {
     }
   }, [user])
 
-  const shipping = calcShipping(subtotal, promotions)
-  const total = subtotal + shipping
+  // subtotal বদলালে applied promo-র discount re-calculate করা হচ্ছে
+  useEffect(() => {
+    if (!appliedPromo) return
+    let newDiscount = 0
+    if (appliedPromo.type === 'percent') {
+      newDiscount = Math.round((subtotal * appliedPromo.value) / 100)
+    } else {
+      newDiscount = appliedPromo.value
+    }
+    newDiscount = Math.min(newDiscount, subtotal)
+    setAppliedPromo(prev => ({ ...prev, discount: newDiscount }))
+  }, [subtotal])
+
+  const promoDiscount = appliedPromo?.discount || 0
+  const discountedSubtotal = subtotal - promoDiscount
+  const shipping = calcShipping(discountedSubtotal, promotions)
+  const total = discountedSubtotal + shipping
+
+  async function handleApplyPromo() {
+    if (!promoInput.trim()) return
+    setPromoApplying(true)
+    setPromoError('')
+    try {
+      const result = await api.promo.apply(promoInput.trim(), subtotal)
+      setAppliedPromo(result)
+      setPromoInput('')
+    } catch (err) {
+      setPromoError(err.message)
+    } finally {
+      setPromoApplying(false)
+    }
+  }
+
+  function handleRemovePromo() {
+    setAppliedPromo(null)
+    setPromoError('')
+  }
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -107,6 +140,7 @@ export default function Checkout() {
         ...form,
         items: orderItems,
         subtotal,
+        promoCode: appliedPromo?.code || '',
         shipping,
         total,
       })
@@ -137,10 +171,7 @@ export default function Checkout() {
         <p className="text-ink/60 mb-1">{t('checkout.orderIdLabel')}</p>
         <p className="font-mono text-lg text-clay font-semibold mb-8">{orderId}</p>
         <p className="text-ink/60 text-sm mb-8">{t('checkout.orderSuccessNote')}</p>
-        <Link
-          to="/shop"
-          className="inline-block bg-ink text-sand px-6 py-3 rounded-md font-medium hover:bg-clay transition-colors"
-        >
+        <Link to="/shop" className="inline-block bg-ink text-sand px-6 py-3 rounded-md font-medium hover:bg-clay transition-colors">
           {t('checkout.shopMore')}
         </Link>
       </div>
@@ -151,6 +182,8 @@ export default function Checkout() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <h1 className="font-display text-3xl text-ink mb-8">{t('checkout.title')}</h1>
       <div className="grid lg:grid-cols-3 gap-10">
+
+        {/* ── Left: Form ── */}
         <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-5" noValidate>
           <div className="flex items-center justify-between">
             <h2 className="font-display text-lg text-ink">{t('checkout.deliveryInfo')}</h2>
@@ -162,62 +195,72 @@ export default function Checkout() {
             )}
           </div>
 
-          <Field
-            label={t('checkout.fullName')}
-            name="fullName"
-            value={form.fullName}
-            onChange={handleChange}
-            error={errors.fullName}
-          />
-          <Field
-            label={t('checkout.phone')}
-            name="phone"
-            value={form.phone}
-            onChange={handleChange}
-            error={errors.phone}
-            placeholder="01XXXXXXXXX"
-          />
-          <Field
-            label={t('checkout.address')}
-            name="address"
-            value={form.address}
-            onChange={handleChange}
-            error={errors.address}
-            as="textarea"
-          />
-          <Field
-            label={t('checkout.city')}
-            name="city"
-            value={form.city}
-            onChange={handleChange}
-            error={errors.city}
-          />
+          <Field label={t('checkout.fullName')} name="fullName" value={form.fullName} onChange={handleChange} error={errors.fullName} />
+          <Field label={t('checkout.phone')} name="phone" value={form.phone} onChange={handleChange} error={errors.phone} placeholder="01XXXXXXXXX" />
+          <Field label={t('checkout.address')} name="address" value={form.address} onChange={handleChange} error={errors.address} as="textarea" />
+          <Field label={t('checkout.city')} name="city" value={form.city} onChange={handleChange} error={errors.city} />
 
-          <h2 className="font-display text-lg text-ink pt-4">{t('checkout.paymentMethod')}</h2>
+          {/* ── Promo Code Section ── */}
+          <div>
+            <h2 className="font-display text-lg text-ink mb-3">প্রোমো কোড</h2>
+            {appliedPromo ? (
+              <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-md px-4 py-3">
+                <Tag size={16} className="text-green-600 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-green-800 font-mono">{appliedPromo.code}</p>
+                  <p className="text-xs text-green-600">
+                    {appliedPromo.label && `${appliedPromo.label} · `}
+                    {appliedPromo.type === 'percent' ? `${appliedPromo.value}% ছাড়` : `৳${appliedPromo.value} ছাড়`}
+                    {' '}· সাশ্রয় ৳{appliedPromo.discount}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemovePromo}
+                  className="p-1.5 text-green-500 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={promoInput}
+                  onChange={e => { setPromoInput(e.target.value.toUpperCase()); setPromoError('') }}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleApplyPromo())}
+                  placeholder="প্রোমো কোড লিখুন"
+                  className="flex-1 bg-sand border border-stone-dark rounded-md px-3.5 py-2.5 text-sm font-mono uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-clay/40"
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyPromo}
+                  disabled={promoApplying || !promoInput.trim()}
+                  className="flex items-center gap-1.5 px-4 py-2.5 bg-ink text-sand text-sm font-medium rounded-md hover:bg-clay transition-colors disabled:opacity-50 shrink-0"
+                >
+                  {promoApplying ? <Loader2 size={14} className="animate-spin" /> : <Tag size={14} />}
+                  Apply
+                </button>
+              </div>
+            )}
+            {promoError && (
+              <p className="text-xs text-clay mt-1.5 flex items-center gap-1">
+                <X size={12} /> {promoError}
+              </p>
+            )}
+          </div>
+
+          <h2 className="font-display text-lg text-ink pt-2">{t('checkout.paymentMethod')}</h2>
           <div className="space-y-3">
             <label className="flex items-center gap-3 border border-stone-dark rounded-md p-4 cursor-pointer hover:border-clay">
-              <input
-                type="radio"
-                name="paymentMethod"
-                value="cod"
-                checked={form.paymentMethod === 'cod'}
-                onChange={handleChange}
-                className="accent-clay"
-              />
+              <input type="radio" name="paymentMethod" value="cod" checked={form.paymentMethod === 'cod'} onChange={handleChange} className="accent-clay" />
               <div>
                 <p className="text-sm font-medium text-ink">{t('checkout.cod')}</p>
                 <p className="text-xs text-ink/50">{t('checkout.codSub')}</p>
               </div>
             </label>
             <label className="flex items-center gap-3 border border-stone-dark rounded-md p-4 cursor-pointer hover:border-clay">
-              <input
-                type="radio"
-                name="paymentMethod"
-                value="bkash"
-                checked={form.paymentMethod === 'bkash'}
-                onChange={handleChange}
-                className="accent-clay"
-              />
+              <input type="radio" name="paymentMethod" value="bkash" checked={form.paymentMethod === 'bkash'} onChange={handleChange} className="accent-clay" />
               <div>
                 <p className="text-sm font-medium text-ink">{t('checkout.mobileBank')}</p>
                 <p className="text-xs text-ink/50">{t('checkout.mobileBankSub')}</p>
@@ -235,7 +278,7 @@ export default function Checkout() {
           </button>
         </form>
 
-        {/* Order Summary */}
+        {/* ── Right: Order Summary ── */}
         <div className="lg:col-span-1">
           <div className="bg-stone rounded-xl p-5 sm:p-6 lg:sticky lg:top-24">
             <h2 className="font-display text-lg text-ink mb-5">{t('cart.orderSummary')}</h2>
@@ -256,17 +299,26 @@ export default function Checkout() {
                 <span>{t('cart.subtotal')}</span>
                 <span className="font-mono">৳{subtotal}</span>
               </div>
+              {promoDiscount > 0 && (
+                <div className="flex justify-between text-green-600 font-medium">
+                  <span className="flex items-center gap-1">
+                    <Tag size={12} /> প্রোমো ({appliedPromo.code})
+                  </span>
+                  <span className="font-mono">− ৳{promoDiscount}</span>
+                </div>
+              )}
               <div className="flex justify-between text-ink/70">
                 <span>{t('cart.shipping')}</span>
                 <span className="font-mono">{shipping === 0 ? t('cart.free') : `৳${shipping}`}</span>
               </div>
-              <div className="flex justify-between font-medium text-ink pt-2 border-t border-stone-dark">
+              <div className="flex justify-between font-semibold text-ink pt-2 border-t border-stone-dark">
                 <span>{t('cart.total')}</span>
                 <span className="font-mono">৳{total}</span>
               </div>
             </div>
           </div>
         </div>
+
       </div>
     </div>
   )
@@ -276,19 +328,11 @@ function Field({ label, name, value, onChange, error, placeholder, as = 'input' 
   const Tag = as
   return (
     <div>
-      <label htmlFor={name} className="block text-sm font-medium text-ink mb-1.5">
-        {label}
-      </label>
+      <label htmlFor={name} className="block text-sm font-medium text-ink mb-1.5">{label}</label>
       <Tag
-        id={name}
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        rows={as === 'textarea' ? 3 : undefined}
-        className={`w-full bg-sand border rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40 ${
-          error ? 'border-clay' : 'border-stone-dark'
-        }`}
+        id={name} name={name} value={value} onChange={onChange}
+        placeholder={placeholder} rows={as === 'textarea' ? 3 : undefined}
+        className={`w-full bg-sand border rounded-md px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40 ${error ? 'border-clay' : 'border-stone-dark'}`}
       />
       {error && <p className="text-xs text-clay mt-1">{error}</p>}
     </div>

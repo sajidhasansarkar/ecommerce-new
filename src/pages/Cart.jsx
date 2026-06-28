@@ -1,15 +1,65 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Minus, Plus, Trash2, ArrowRight } from 'lucide-react'
 import { useCart } from '../context/CartContext.jsx'
 import { useLanguage } from '../context/LanguageContext.jsx'
+import { api } from '../api.js'
+
+/* ─── Delivery charge helper (same as Checkout) ─── */
+function calcShipping(subtotal, promotions) {
+  if (!promotions) {
+    return subtotal >= 1500 || subtotal === 0 ? 0 : 80
+  }
+  const {
+    deliveryEnabled = true,
+    deliveryCharge = 80,
+    freeDeliveryEnabled = true,
+    freeDeliveryThreshold = 1500,
+  } = promotions
+  if (!deliveryEnabled || subtotal === 0) return 0
+  if (freeDeliveryEnabled && subtotal >= freeDeliveryThreshold) return 0
+  return deliveryCharge
+}
+
+/* ─── Discount helper ─── */
+function calcDiscount(subtotal, promotions) {
+  if (!promotions?.discountRules?.length) return 0
+  const now = new Date()
+  let best = 0
+  for (const rule of promotions.discountRules) {
+    if (!rule.enabled) continue
+    if (rule.expiry && new Date(rule.expiry) < now) continue
+    if (rule.scope === 'minOrder' && subtotal < (rule.minOrder || 0)) continue
+    // 'category' scope — Cart-এ category info নেই, তাই skip
+    if (rule.scope === 'category') continue
+    let amount = 0
+    if (rule.type === 'percent') amount = Math.round((subtotal * rule.value) / 100)
+    else if (rule.type === 'flat') amount = rule.value
+    if (amount > best) best = amount
+  }
+  return Math.min(best, subtotal) // discount কখনো subtotal-এর বেশি হবে না
+}
 
 export default function Cart() {
   const { items, removeItem, updateQty, subtotal } = useCart()
   const { t } = useLanguage()
+  const [promotions, setPromotions] = useState(null)
 
-  const shipping = subtotal >= 1500 || subtotal === 0 ? 0 : 80
-  const total = subtotal + shipping
+  useEffect(() => {
+    api.settings.get()
+      .then((s) => setPromotions(s.promotions || null))
+      .catch(() => {})
+  }, [])
+
+  const discount = calcDiscount(subtotal, promotions)
+  const discountedSubtotal = subtotal - discount
+  const shipping = calcShipping(discountedSubtotal, promotions)
+  const total = discountedSubtotal + shipping
+
+  // Free delivery threshold (admin থেকে আসা অথবা default)
+  const freeThreshold = promotions?.freeDeliveryEnabled
+    ? promotions.freeDeliveryThreshold
+    : 1500
 
   if (items.length === 0) {
     return (
@@ -96,12 +146,22 @@ export default function Cart() {
                 <span>{t('cart.subtotal')}</span>
                 <span className="font-mono">৳{subtotal}</span>
               </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-sage font-medium">
+                  <span>ডিসকাউন্ট</span>
+                  <span className="font-mono">− ৳{discount}</span>
+                </div>
+              )}
               <div className="flex justify-between text-ink/70">
                 <span>{t('cart.shipping')}</span>
-                <span className="font-mono">{shipping === 0 ? t('cart.free') : `৳${shipping}`}</span>
+                <span className="font-mono">
+                  {shipping === 0 ? t('cart.free') : `৳${shipping}`}
+                </span>
               </div>
-              {shipping > 0 && (
-                <p className="text-xs text-clay">{t('cart.freeShippingNote', 1500 - subtotal)}</p>
+              {shipping > 0 && promotions?.freeDeliveryEnabled && (
+                <p className="text-xs text-clay">
+                  {t('cart.freeShippingNote', freeThreshold - discountedSubtotal)}
+                </p>
               )}
             </div>
             <div className="flex justify-between font-medium text-ink border-t border-stone-dark pt-4 mb-6">

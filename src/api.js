@@ -1,6 +1,3 @@
-// Base URL reads from environment variable.
-// In development: create a .env.local file with VITE_API_URL=http://localhost:5000
-// In production: set VITE_API_URL to your deployed backend URL (e.g. https://api.yourdomain.com)
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 function authHeaders() {
@@ -15,9 +12,6 @@ async function request(method, path, body) {
     body: body ? JSON.stringify(body) : undefined,
   })
 
-  // রেসপন্স টেক্সট আগে পড়ি, কারণ সার্ভার/হোস্টিং প্ল্যাটফর্ম কখনো কখনো
-  // এরর হলে JSON না দিয়ে HTML পেজ (যেমন "413 Payload Too Large") রিটার্ন করে।
-  // সরাসরি res.json() কল করলে তখন "Unexpected token '<'..." এই ক্রিপ্টিক এরর আসে।
   const raw = await res.text()
   let data
   try {
@@ -54,8 +48,6 @@ export const api = {
     create: (data) => request('POST', '/api/products', data),
     update: (id, data) => request('PUT', `/api/products/${id}`, data),
     delete: (id) => request('DELETE', `/api/products/${id}`),
-    // পুরনো প্রোডাক্টে SHOE-001 স্টাইল productId না থাকলে, একবার চালিয়ে সব
-    // মিসিং productId বসিয়ে দেয় — Admin Products পেজের বাটন থেকে কল হয়
     migrateProductIds: () => request('POST', '/api/products/migrate/product-ids'),
   },
   orders: {
@@ -82,9 +74,14 @@ export const api = {
     get: () => request('GET', '/api/settings'),
     update: (data) => request('PUT', '/api/settings', data),
   },
+  promo: {
+    list: () => request('GET', '/api/promo'),
+    create: (data) => request('POST', '/api/promo', data),
+    update: (id, data) => request('PUT', `/api/promo/${id}`, data),
+    delete: (id) => request('DELETE', `/api/promo/${id}`),
+    apply: (code, subtotal) => request('POST', '/api/promo/apply', { code, subtotal }),
+  },
   upload: {
-    // dataUrlOrBase64: ফাইল থেকে পাওয়া base64 ডেটা URL (যেমন "data:image/png;base64,...")
-    // রিটার্ন করে: { url, thumbUrl, displayUrl, ... } — url টাই ডাটাবেসে সেভ করার জন্য ব্যবহার করুন
     image: (dataUrlOrBase64, name) => request('POST', '/api/upload', { image: dataUrlOrBase64, name }),
   },
 }

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Package, ShoppingCart, Users, Settings, ArrowLeft, LogOut, Tag, Loader2, Percent } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, Settings, ArrowLeft, LogOut, Tag, Loader2, Percent, Ticket } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 
@@ -28,6 +28,7 @@ export default function AdminLayout() {
     { to: '/admin/customers', label: t('admin.customers'), icon: Users },
     { to: '/admin/categories', label: t('admin.categories'), icon: Tag },
     { to: '/admin/promotions', label: 'Offers & Delivery', icon: Percent },
+    { to: '/admin/promo-codes', label: 'প্রোমো কোড', icon: Ticket },
     { to: '/admin/settings', label: t('admin.siteSettings'), icon: Settings },
   ]
   if (loading) {
