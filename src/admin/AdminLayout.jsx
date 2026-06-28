@@ -122,7 +122,7 @@ export default function AdminLayout() {
         <div className="p-6 border-b border-sand/10">
           <Link to="/" className="font-display text-xl flex items-center">
             {logoImage
-              ? <img src={logoImage} alt={t('brand.name')} className="h-8 max-w-[140px] object-contain" />
+              ? <img src={logoImage} alt={t('brand.name')} className="h-12 max-w-[180px] object-contain" />
               : t('brand.name')
             }
           </Link>

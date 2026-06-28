@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import compression from 'compression'
+import cookieParser from 'cookie-parser'
 import dotenv from 'dotenv'
 import { connectDB } from './config/db.js'
 import { globalLimiter } from './middleware/rateLimiter.js'
@@ -42,6 +43,7 @@ app.use(cors({
   credentials: true,
 }))
 
+app.use(cookieParser())
 app.use(express.json({ limit: '25mb' }))
 app.use(express.urlencoded({ limit: '25mb', extended: true }))
 app.use(globalLimiter)

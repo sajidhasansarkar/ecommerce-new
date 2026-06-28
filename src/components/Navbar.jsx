@@ -141,7 +141,7 @@ export default function Navbar() {
                 <img
                   src={logoImage}
                   alt={t('brand.name')}
-                  className="h-12 lg:h-16 w-auto max-w-[200px] object-contain"
+                  className="h-16 lg:h-20 w-auto max-w-[260px] object-contain"
                 />
               ) : (
                 <>

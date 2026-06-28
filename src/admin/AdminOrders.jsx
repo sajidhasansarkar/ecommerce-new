@@ -58,7 +58,7 @@ function buildReceiptHTML(order, { logoImage = '', storeName = 'My Shop' } = {})
 
   // লোগো ছবি থাকলে <img>, না থাকলে আগের মতো টেক্সট ব্র্যান্ড — দুটোতেই storeName ডাইনামিক
   const brandHTML = logoImage
-    ? `<img src="${logoImage}" alt="${storeName}" style="height:40px;max-width:180px;object-fit:contain"/>`
+    ? `<img src="${logoImage}" alt="${storeName}" style="height:70px;max-width:240px;object-fit:contain"/>`
     : `<div class="brand">${storeName}<span>.</span></div>`
 
   return `<!DOCTYPE html>
@@ -165,7 +165,6 @@ function buildReceiptHTML(order, { logoImage = '', storeName = 'My Shop' } = {})
 
   <div class="footer">
     <strong>${storeName}</strong>
-    <br/>Thank you for your order! Please keep this receipt.
   </div>
 </div>
 <script>

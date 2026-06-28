@@ -7,10 +7,9 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Load user from localStorage on mount
-    const token = localStorage.getItem('authToken')
-    const stored = localStorage.getItem('userData')
-    if (token && stored) {
+    // Load user from sessionStorage on mount (token is in httpOnly cookie)
+    const stored = sessionStorage.getItem('userData')
+    if (stored) {
       try {
         setUser(JSON.parse(stored))
       } catch {}
@@ -19,27 +18,24 @@ export function AuthProvider({ children }) {
   }, [])
 
   function login(userData) {
-    localStorage.setItem('authToken', userData.token)
-    localStorage.setItem('userRole', userData.role)
-    localStorage.setItem('userName', userData.name)
-    localStorage.setItem('userData', JSON.stringify(userData))
-    if (userData.role === 'admin') localStorage.setItem('adminToken', userData.token)
+    // Token is now stored in httpOnly cookie by the server — don't store it here
+    sessionStorage.setItem('userRole', userData.role)
+    sessionStorage.setItem('userName', userData.name)
+    sessionStorage.setItem('userData', JSON.stringify(userData))
     setUser(userData)
   }
 
   function logout() {
-    localStorage.removeItem('authToken')
-    localStorage.removeItem('adminToken')
-    localStorage.removeItem('userRole')
-    localStorage.removeItem('userName')
-    localStorage.removeItem('userData')
+    sessionStorage.removeItem('userRole')
+    sessionStorage.removeItem('userName')
+    sessionStorage.removeItem('userData')
     setUser(null)
   }
 
   function updateUser(userData) {
     const merged = { ...user, ...userData }
-    localStorage.setItem('userData', JSON.stringify(merged))
-    localStorage.setItem('userName', merged.name)
+    sessionStorage.setItem('userData', JSON.stringify(merged))
+    sessionStorage.setItem('userName', merged.name)
     setUser(merged)
   }
 

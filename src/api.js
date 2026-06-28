@@ -1,14 +1,10 @@
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
-function authHeaders() {
-  const token = localStorage.getItem('authToken')
-  return token ? { Authorization: `Bearer ${token}` } : {}
-}
-
 async function request(method, path, body) {
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // httpOnly cookie পাঠাবে প্রতিটি রিকোয়েস্টে
     body: body ? JSON.stringify(body) : undefined,
   })
 
@@ -32,6 +28,7 @@ export const api = {
     login: (email, password) => request('POST', '/api/auth/login', { email, password }),
     register: (name, email, password) => request('POST', '/api/auth/register', { name, email, password }),
     me: () => request('GET', '/api/auth/me'),
+    logout: () => request('POST', '/api/auth/logout'),
     updateProfile: (data) => request('PUT', '/api/auth/profile', data),
     google: (credential) => request('POST', '/api/auth/google', { credential }),
     facebook: (credential) => request('POST', '/api/auth/facebook', { credential }),

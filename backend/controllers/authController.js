@@ -3,9 +3,21 @@ import crypto from 'crypto'
 import admin from '../config/firebaseAdmin.js'
 import User from '../models/User.js'
 
-// JWT expires in 7 days (was 30d)
+const COOKIE_OPTIONS = {
+  httpOnly: true,        // JS দিয়ে অ্যাক্সেস করা যাবে না (XSS protection)
+  secure: process.env.NODE_ENV === 'production', // production-এ শুধু HTTPS
+  sameSite: 'strict',   // CSRF protection
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 দিন (milliseconds)
+  path: '/',
+}
+
 function generateToken(id) {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' })
+}
+
+function setTokenCookie(res, userId) {
+  const token = generateToken(userId)
+  res.cookie('authToken', token, COOKIE_OPTIONS)
 }
 
 function userResponse(user) {
@@ -17,7 +29,7 @@ function userResponse(user) {
     role: user.role,
     avatar: user.avatar,
     address: user.address,
-    token: generateToken(user._id),
+    // token আর response body-তে পাঠানো হচ্ছে না — cookie-তে আছে
   }
 }
 
@@ -31,6 +43,7 @@ export async function registerUser(req, res) {
     const existing = await User.findOne({ email })
     if (existing) return res.status(400).json({ message: 'এই ইমেইল দিয়ে আগেই অ্যাকাউন্ট আছে' })
     const user = await User.create({ name, email, password })
+    setTokenCookie(res, user._id)
     res.status(201).json(userResponse(user))
   } catch (err) {
     res.status(400).json({ message: err.message })
@@ -43,6 +56,7 @@ export async function loginUser(req, res) {
     const { email, password } = req.body
     const user = await User.findOne({ email })
     if (user && (await user.matchPassword(password))) {
+      setTokenCookie(res, user._id)
       res.json(userResponse(user))
     } else {
       res.status(401).json({ message: 'ইমেইল বা পাসওয়ার্ড সঠিক নয়' })
@@ -50,6 +64,12 @@ export async function loginUser(req, res) {
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
+}
+
+// POST /api/auth/logout
+export function logoutUser(req, res) {
+  res.clearCookie('authToken', { ...COOKIE_OPTIONS, maxAge: 0 })
+  res.json({ message: 'লগআউট সফল হয়েছে' })
 }
 
 // GET /api/auth/me
@@ -77,13 +97,12 @@ export async function updateProfile(req, res) {
   }
 }
 
-// POST /api/auth/google — verifies a Firebase ID token (sent from frontend after signInWithPopup)
+// POST /api/auth/google
 export async function googleAuth(req, res) {
   try {
     const { credential } = req.body
     if (!credential) return res.status(400).json({ message: 'Firebase ID token missing' })
 
-    // Verify the Firebase ID token with Firebase Admin SDK
     let decoded
     try {
       decoded = await admin.auth().verifyIdToken(credential)
@@ -92,10 +111,8 @@ export async function googleAuth(req, res) {
     }
 
     const { uid: googleId, email, name, picture } = decoded
-
     if (!googleId || !email) return res.status(400).json({ message: 'Invalid Google payload' })
 
-    // Find or create user
     let user = await User.findOne({ googleId })
     if (!user) {
       user = await User.findOne({ email })
@@ -114,6 +131,7 @@ export async function googleAuth(req, res) {
       }
     }
 
+    setTokenCookie(res, user._id)
     res.json(userResponse(user))
   } catch (err) {
     console.error('Google auth error:', err.message)
@@ -121,7 +139,7 @@ export async function googleAuth(req, res) {
   }
 }
 
-// POST /api/auth/facebook — verifies a Firebase ID token from Facebook sign-in
+// POST /api/auth/facebook
 export async function facebookAuth(req, res) {
   try {
     const { credential } = req.body
@@ -135,13 +153,10 @@ export async function facebookAuth(req, res) {
     }
 
     const { uid: facebookId, email, name, picture } = decoded
-
     if (!facebookId) return res.status(400).json({ message: 'Invalid Facebook payload' })
 
-    // Find or create user
     let user = await User.findOne({ facebookId })
     if (!user && email) {
-      // Check if email already exists (Google or email/password account)
       user = await User.findOne({ email })
       if (user) {
         user.facebookId = facebookId
@@ -159,6 +174,7 @@ export async function facebookAuth(req, res) {
       })
     }
 
+    setTokenCookie(res, user._id)
     res.json(userResponse(user))
   } catch (err) {
     console.error('Facebook auth error:', err.message)
@@ -166,14 +182,13 @@ export async function facebookAuth(req, res) {
   }
 }
 
-
 export async function sendOtp(req, res) {
   try {
     const { phone } = req.body
     if (!phone) return res.status(400).json({ message: 'ফোন নম্বর দিন' })
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString()
-    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000)
 
     let user = await User.findOne({ phone })
     if (!user) {
@@ -190,11 +205,7 @@ export async function sendOtp(req, res) {
       await user.save()
     }
 
-    // TODO: Send OTP via SMS (Twilio, SSLCommerz, etc.)
-    // Example: await smsClient.send(phone, `আপনার OTP: ${otp}`)
     console.log(`[DEV ONLY] OTP for ${phone}: ${otp}`)
-
-    // ✅ Fixed: OTP is NOT returned in the response anymore
     res.json({ message: 'OTP পাঠানো হয়েছে' })
   } catch (err) {
     res.status(500).json({ message: err.message })
@@ -215,6 +226,7 @@ export async function verifyOtp(req, res) {
     user.otpExpiry = undefined
     await user.save()
 
+    setTokenCookie(res, user._id)
     res.json(userResponse(user))
   } catch (err) {
     res.status(500).json({ message: err.message })

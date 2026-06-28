@@ -2,6 +2,7 @@ import express from 'express'
 import {
   registerUser,
   loginUser,
+  logoutUser,
   getMe,
   updateProfile,
   googleAuth,
@@ -18,6 +19,7 @@ const router = express.Router()
 // Rate-limited auth endpoints (brute-force protection)
 router.post('/register', authLimiter, registerUser)
 router.post('/login', authLimiter, loginUser)
+router.post('/logout', logoutUser)
 router.post('/google', authLimiter, googleAuth)
 router.post('/facebook', authLimiter, facebookAuth)
 router.post('/send-otp', authLimiter, sendOtp)
