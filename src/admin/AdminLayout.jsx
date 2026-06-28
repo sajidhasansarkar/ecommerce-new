@@ -3,10 +3,12 @@ import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Package, ShoppingCart, Users, Settings, ArrowLeft, LogOut, Tag, Loader2, Percent, Ticket } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useSiteSettings } from '../context/SiteSettingsContext.jsx'
 
 export default function AdminLayout() {
   const { t } = useLanguage()
   const { user, loading, logout } = useAuth()
+  const { logoImage } = useSiteSettings()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -118,7 +120,12 @@ export default function AdminLayout() {
     <div className="min-h-screen bg-stone flex">
       <aside className="w-60 bg-ink text-sand shrink-0 hidden md:flex flex-col">
         <div className="p-6 border-b border-sand/10">
-          <Link to="/" className="font-display text-xl">{t('brand.name')}</Link>
+          <Link to="/" className="font-display text-xl flex items-center">
+            {logoImage
+              ? <img src={logoImage} alt={t('brand.name')} className="h-8 max-w-[140px] object-contain" />
+              : t('brand.name')
+            }
+          </Link>
           <p className="text-xs text-sand/40 mt-0.5">{t('admin.panel')}</p>
         </div>
 

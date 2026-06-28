@@ -34,15 +34,7 @@ function formatDateEn(d) {
 // লোগো/নাম বদলালে নতুন প্রিন্ট হওয়া স্লিপেও সাথে সাথে রিফ্লেক্ট হবে, হার্ডকোড
 // করা "My Shop" টেক্সট থাকবে না।
 function buildReceiptHTML(order, { logoImage = '', storeName = 'My Shop' } = {}) {
-  const statusLabel = STATUS_EN[order.status] || order.status
   const paymentLabel = PAYMENT_EN[order.paymentMethod] || order.paymentMethod
-
-  const statusStyle = {
-    processing: 'background:#fef3c7;color:#92400e',
-    shipped:    'background:#dbeafe;color:#1e40af',
-    delivered:  'background:#dcfce7;color:#166534',
-    cancelled:  'background:#fee2e2;color:#b91c1c',
-  }[order.status] || 'background:#f3f4f6;color:#374151'
 
   const rows = order.items.map((item, i) => {
     // skuId (যেমন SHOE-001) থাকলেই দেখাও — পুরনো অর্ডারে না থাকলে কিছু দেখাবে না,
@@ -86,7 +78,7 @@ function buildReceiptHTML(order, { logoImage = '', storeName = 'My Shop' } = {})
   .receipt-label h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:#aaa;margin-bottom:6px}
   .receipt-label .order-num{font-size:18px;font-weight:700;color:#fff;font-family:monospace}
   .receipt-label .date{font-size:12px;color:#888;margin-top:4px}
-  .status-pill{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;margin-top:8px;${statusStyle}}
+  
   .body{padding:28px 32px}
   .section{margin-bottom:24px}
   .section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#b5a99a;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #f0ede8}
@@ -119,7 +111,6 @@ function buildReceiptHTML(order, { logoImage = '', storeName = 'My Shop' } = {})
       <h2>Order Receipt</h2>
       <div class="order-num">${order.orderNumber}</div>
       <div class="date">${formatDateEn(order.createdAt)}</div>
-      <div><span class="status-pill">${statusLabel}</span></div>
     </div>
   </div>
 
