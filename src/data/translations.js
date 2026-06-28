@@ -221,6 +221,8 @@ export const translations = {
     },
     admin: {
       dashboard: 'ড্যাশবোর্ড',
+      offersDelivery: 'অফার ও ডেলিভারি',
+      promoLabel: 'প্রোমো কোড',
       dashboardDesc: 'আপনার শপের একনজরে অবস্থা',
       products: 'প্রোডাক্ট',
       orders: 'অর্ডার',
@@ -692,6 +694,8 @@ export const translations = {
     },
     admin: {
       dashboard: 'Dashboard',
+      offersDelivery: 'Offers & Delivery',
+      promoLabel: 'Promo Codes',
       dashboardDesc: 'An overview of your shop',
       products: 'Products',
       orders: 'Orders',

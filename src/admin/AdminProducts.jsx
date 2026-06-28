@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Pencil, Trash2, X, Loader2, Link as LinkIcon, Upload, Image } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext.jsx'
@@ -19,7 +19,7 @@ const BADGE_OPTIONS = [
 
 const emptyForm = {
   nameBn: '', nameEn: '',
-  categoryKey: 'shoes',
+  categoryKey: '',
   price: '', oldPrice: '', discountPercent: '', stock: '',
   descriptionBn: '', descriptionEn: '',
   images: [],
@@ -68,6 +68,13 @@ export default function AdminProducts() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [imgTab, setImgTab] = useState('url') // 'url' | 'upload' | 'drag'
   const [dragOver, setDragOver] = useState(false)
+
+  // নতুন product form open হলে প্রথম available category auto-select করো
+  useEffect(() => {
+    if (modalOpen && !editingId && categories.length > 0 && !form.categoryKey) {
+      setForm(f => ({ ...f, categoryKey: categories[0].key }))
+    }
+  }, [modalOpen, categories, editingId])
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const [migratingIds, setMigratingIds] = useState(false)
