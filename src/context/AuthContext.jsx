@@ -25,7 +25,13 @@ export function AuthProvider({ children }) {
     setUser(userData)
   }
 
-  function logout() {
+  async function logout() {
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+    } catch {}
     sessionStorage.removeItem('userRole')
     sessionStorage.removeItem('userName')
     sessionStorage.removeItem('userData')

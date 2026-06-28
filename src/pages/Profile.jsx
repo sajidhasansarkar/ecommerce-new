@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useLanguage } from '../context/LanguageContext.jsx'
 import { api } from '../api.js'
-import { User, Phone, Mail, MapPin, Lock, Check, ArrowLeft } from 'lucide-react'
+import { User, Phone, Mail, MapPin, Lock, Check, ArrowLeft, Eye, EyeOff } from 'lucide-react'
 
 export default function Profile() {
   const { user, updateUser, logout } = useAuth()
@@ -21,6 +21,8 @@ export default function Profile() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   if (!user) {
     navigate('/login')
@@ -152,21 +154,41 @@ export default function Profile() {
           <label className="block text-sm font-medium text-ink mb-1.5 flex items-center gap-1.5">
             <Lock size={13} /> {t('profile.newPassword')} <span className="text-ink/40 font-normal">{t('profile.optional')}</span>
           </label>
-          <input
-            name="password" type="password" value={form.password} onChange={handleChange}
-            placeholder="••••••••"
-            className="w-full bg-sand border border-stone-dark rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40"
-          />
+          <div className="relative">
+            <input
+              name="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={handleChange}
+              placeholder="••••••••"
+              className="w-full bg-sand border border-stone-dark rounded-lg px-4 py-2.5 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(v => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-ink/40 hover:text-clay transition-colors"
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+            </button>
+          </div>
         </div>
 
         {form.password && (
           <div>
             <label className="block text-sm font-medium text-ink mb-1.5">{t('profile.confirmPassword')}</label>
-            <input
-              name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange}
-              placeholder="••••••••"
-              className="w-full bg-sand border border-stone-dark rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40"
-            />
+            <div className="relative">
+              <input
+                name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} value={form.confirmPassword} onChange={handleChange}
+                placeholder="••••••••"
+                className="w-full bg-sand border border-stone-dark rounded-lg px-4 py-2.5 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink/40 hover:text-clay transition-colors"
+                tabIndex={-1}
+              >
+                {showConfirmPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
+            </div>
           </div>
         )}
 

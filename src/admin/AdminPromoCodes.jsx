@@ -4,6 +4,7 @@ import {
   Tag, ToggleLeft, ToggleRight, Calendar, Users, AlertCircle, Copy, Check
 } from 'lucide-react'
 import { api } from '../api.js'
+import { useLanguage } from '../context/LanguageContext.jsx'
 
 /* ── Switch ── */
 function Switch({ enabled, onChange }) {
@@ -53,7 +54,7 @@ function CopyButton({ text }) {
 }
 
 /* ── Promo Card (view mode) ── */
-function PromoCard({ promo, onEdit, onDelete, onToggle }) {
+function PromoCard({ promo, onEdit, onDelete, onToggle, t }) {
   const isExpired = promo.expiry && new Date(promo.expiry) < new Date()
   const isExhausted = promo.maxUses > 0 && promo.usedCount >= promo.maxUses
   const isActive = promo.enabled && !isExpired && !isExhausted
@@ -77,7 +78,7 @@ function PromoCard({ promo, onEdit, onDelete, onToggle }) {
           {isActive && <span className="text-[11px] text-green-600 bg-green-100 px-2 py-0.5 rounded-full font-medium">Active</span>}
           <Switch enabled={promo.enabled} onChange={() => onToggle(promo)} />
           <button onClick={() => onEdit(promo)} className="px-3 py-1 text-xs text-ink/60 hover:text-clay border border-stone-dark hover:border-clay/40 rounded-lg transition-colors">
-            Edit
+            {t('admin.promoEdit')}
           </button>
           <button onClick={() => onDelete(promo._id)} className="p-1.5 text-ink/25 hover:text-red-400 hover:bg-red-50 rounded-lg transition-colors">
             <Trash2 size={14} />
@@ -93,7 +94,7 @@ function PromoCard({ promo, onEdit, onDelete, onToggle }) {
             {promo.type === 'percent' ? `${promo.value}%` : `৳${promo.value}`}
           </span>
           <span className="text-xs text-ink/50">
-            {promo.type === 'percent' ? 'ছাড়' : 'ফ্ল্যাট ছাড়'}
+            {promo.type === 'percent' ? '%' : '৳'} ছাড়
           </span>
         </div>
 
@@ -103,17 +104,17 @@ function PromoCard({ promo, onEdit, onDelete, onToggle }) {
         <div className="flex flex-wrap gap-3">
           {promo.minOrder > 0 && (
             <span className="flex items-center gap-1 text-xs text-ink/60 bg-stone/60 border border-stone-dark px-2.5 py-1 rounded-lg">
-              সর্বনিম্ন ৳{promo.minOrder}
+              {t('admin.promoMinOrderCol')}: ৳{promo.minOrder}
             </span>
           )}
           {promo.maxUses > 0 && (
             <span className="flex items-center gap-1 text-xs text-ink/60 bg-stone/60 border border-stone-dark px-2.5 py-1 rounded-lg">
-              <Users size={11} /> {promo.usedCount}/{promo.maxUses} ব্যবহার
+              <Users size={11} /> {promo.usedCount}/{promo.maxUses}
             </span>
           )}
           {promo.maxUses === 0 && (
             <span className="flex items-center gap-1 text-xs text-ink/60 bg-stone/60 border border-stone-dark px-2.5 py-1 rounded-lg">
-              <Users size={11} /> {promo.usedCount} ব্যবহার (সীমাহীন)
+              <Users size={11} /> {promo.usedCount} ({t('admin.promoNoLimit')})
             </span>
           )}
           {promo.expiry && (
@@ -132,7 +133,7 @@ function PromoCard({ promo, onEdit, onDelete, onToggle }) {
 }
 
 /* ── Create / Edit Form ── */
-function PromoForm({ initial, onSave, onCancel, saving }) {
+function PromoForm({ initial, onSave, onCancel, saving, t }) {
   const isEdit = !!initial?._id
   const blank = { code: '', label: '', type: 'percent', value: 10, minOrder: 0, maxUses: 0, expiry: '', enabled: true }
   const [form, setForm] = useState(initial ? {
@@ -168,14 +169,14 @@ function PromoForm({ initial, onSave, onCancel, saving }) {
     <div className="rounded-2xl border-2 border-clay/30 bg-clay/3 overflow-hidden">
       <div className="flex items-center gap-3 px-5 py-4 border-b border-clay/20 bg-clay/5">
         <Tag size={16} className="text-clay" />
-        <h3 className="font-semibold text-sm text-ink">{isEdit ? 'প্রোমো কোড এডিট করুন' : 'নতুন প্রোমো কোড তৈরি করুন'}</h3>
+        <h3 className="font-semibold text-sm text-ink">{isEdit ? t('admin.promoEditTitle') : t('admin.promoAddTitle')}</h3>
       </div>
       <div className="p-5 space-y-4">
 
         {/* Code + Label */}
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-ink/60 mb-1">প্রোমো কোড *</label>
+            <label className="block text-xs font-medium text-ink/60 mb-1">{t('admin.promoCodeLabel')} *</label>
             <input
               value={form.code}
               onChange={e => set('code', e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))}
@@ -186,11 +187,11 @@ function PromoForm({ initial, onSave, onCancel, saving }) {
             {err.code && <p className="text-xs text-clay mt-1">{err.code}</p>}
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink/60 mb-1">লেবেল (Admin note)</label>
+            <label className="block text-xs font-medium text-ink/60 mb-1">{t('admin.promoLabelField')}</label>
             <input
               value={form.label}
               onChange={e => set('label', e.target.value)}
-              placeholder="যেমন: ঈদ অফার ২০২৫"
+              placeholder={t('admin.promoLabelPlaceholder')}
               className="w-full bg-sand border border-stone-dark rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/30"
             />
           </div>
@@ -199,9 +200,9 @@ function PromoForm({ initial, onSave, onCancel, saving }) {
         {/* Type + Value */}
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-ink/60 mb-1">ডিসকাউন্টের ধরন</label>
+            <label className="block text-xs font-medium text-ink/60 mb-1">{t('admin.promoTypeLabel')}</label>
             <div className="flex rounded-xl border border-stone-dark overflow-hidden bg-stone/40">
-              {[{ v: 'percent', label: '% পার্সেন্ট' }, { v: 'flat', label: '৳ ফ্ল্যাট' }].map(opt => (
+              {[{ v: 'percent', label: t('admin.promoTypePercent') }, { v: 'flat', label: t('admin.promoTypeFlat') }].map(opt => (
                 <button
                   key={opt.v} type="button"
                   onClick={() => set('type', opt.v)}
@@ -217,9 +218,7 @@ function PromoForm({ initial, onSave, onCancel, saving }) {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink/60 mb-1">
-              {form.type === 'percent' ? 'কত % ছাড়?' : 'কত ৳ ছাড়?'} *
-            </label>
+            <label className="block text-xs font-medium text-ink/60 mb-1">{t('admin.promoValueLabel')} *</label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/40 text-sm font-medium pointer-events-none">
                 {form.type === 'percent' ? '%' : '৳'}
@@ -238,7 +237,7 @@ function PromoForm({ initial, onSave, onCancel, saving }) {
         {/* Min order + Max uses */}
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-ink/60 mb-1">সর্বনিম্ন অর্ডার পরিমাণ</label>
+            <label className="block text-xs font-medium text-ink/60 mb-1">{t('admin.promoMinOrderLabel')}</label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/40 text-sm pointer-events-none">৳</span>
               <input
@@ -251,7 +250,7 @@ function PromoForm({ initial, onSave, onCancel, saving }) {
             <p className="text-xs text-ink/40 mt-1">০ রাখলে সব অর্ডারে কাজ করবে</p>
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink/60 mb-1">সর্বোচ্চ ব্যবহার সংখ্যা</label>
+            <label className="block text-xs font-medium text-ink/60 mb-1">{t('admin.promoMaxUsesLabel')}</label>
             <div className="relative">
               <Users size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
               <input
@@ -268,7 +267,7 @@ function PromoForm({ initial, onSave, onCancel, saving }) {
         {/* Expiry + Enable */}
         <div className="grid sm:grid-cols-2 gap-3 items-center">
           <div>
-            <label className="block text-xs font-medium text-ink/60 mb-1">মেয়াদ শেষের তারিখ</label>
+            <label className="block text-xs font-medium text-ink/60 mb-1">{t('admin.promoExpiryLabel')}</label>
             <div className="relative">
               <Calendar size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
               <input
@@ -281,7 +280,7 @@ function PromoForm({ initial, onSave, onCancel, saving }) {
           </div>
           <div className="flex items-center justify-between p-3 bg-stone/40 rounded-xl border border-stone-dark">
             <div>
-              <p className="text-sm font-medium text-ink">কোডটি সক্রিয়</p>
+              <p className="text-sm font-medium text-ink">{t('admin.promoStatusLabel')}</p>
               <p className="text-xs text-ink/40">বন্ধ করলে কাস্টমার ব্যবহার করতে পারবে না</p>
             </div>
             <Switch enabled={form.enabled} onChange={v => set('enabled', v)} />
@@ -297,14 +296,14 @@ function PromoForm({ initial, onSave, onCancel, saving }) {
             className="flex items-center gap-2 bg-clay text-sand px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-clay-dark disabled:opacity-60 transition-colors"
           >
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            {isEdit ? 'আপডেট করুন' : 'তৈরি করুন'}
+            {saving ? t('admin.promoSaving') : t('admin.promoSave')}
           </button>
           <button
             type="button"
             onClick={onCancel}
             className="px-5 py-2.5 rounded-xl text-sm text-ink/60 hover:text-ink border border-stone-dark hover:border-ink/30 transition-colors"
           >
-            বাতিল
+            {t('admin.cancel')}
           </button>
         </div>
       </div>
@@ -314,6 +313,7 @@ function PromoForm({ initial, onSave, onCancel, saving }) {
 
 /* ── Main Page ── */
 export default function AdminPromoCodes() {
+  const { t } = useLanguage()
   const [codes, setCodes] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -321,7 +321,6 @@ export default function AdminPromoCodes() {
   const [editTarget, setEditTarget] = useState(null)
   const [pageError, setPageError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
-
   function flash(msg) {
     setSuccessMsg(msg)
     setTimeout(() => setSuccessMsg(''), 3500)
@@ -417,10 +416,8 @@ export default function AdminPromoCodes() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="font-display text-2xl lg:text-3xl text-ink">প্রোমো কোড</h1>
-          <p className="text-ink/50 text-sm mt-1">
-            কাস্টমারদের জন্য বিশেষ ডিসকাউন্ট কোড তৈরি করুন
-          </p>
+          <h1 className="font-display text-2xl lg:text-3xl text-ink">{t('admin.promoCodeTitle')}</h1>
+          <p className="text-ink/50 text-sm mt-1">{t('admin.promoCodeDesc')}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="text-center px-4 py-2 bg-stone rounded-xl border border-stone-dark">
@@ -432,7 +429,7 @@ export default function AdminPromoCodes() {
             className="flex items-center gap-2 bg-clay text-sand px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-clay-dark transition-colors"
           >
             <Plus size={15} />
-            নতুন কোড
+            {t('admin.addPromoCode')}
           </button>
         </div>
       </div>
@@ -457,6 +454,7 @@ export default function AdminPromoCodes() {
             onSave={handleSave}
             onCancel={handleCancel}
             saving={saving}
+            t={t}
           />
         </div>
       )}
@@ -467,8 +465,7 @@ export default function AdminPromoCodes() {
           <div className="w-14 h-14 rounded-full bg-stone/60 flex items-center justify-center mx-auto mb-3">
             <Tag size={24} className="text-ink/25" />
           </div>
-          <p className="text-sm font-medium text-ink/50">কোনো প্রোমো কোড নেই</p>
-          <p className="text-xs text-ink/30 mt-1">উপরের "নতুন কোড" বাটন চেপে তৈরি করুন</p>
+          <p className="text-sm font-medium text-ink/50">{t('admin.promoNoCodes')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -479,6 +476,7 @@ export default function AdminPromoCodes() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onToggle={handleToggle}
+              t={t}
             />
           ))}
         </div>

@@ -251,39 +251,6 @@ export default function Checkout() {
           <Field label={t('checkout.address')} name="address" value={form.address} onChange={handleChange} error={errors.address} as="textarea" />
           <Field label={t('checkout.city')} name="city" value={form.city} onChange={handleChange} error={errors.city} />
 
-          {/* ── Promo Code Section ── */}
-          <div>
-            {appliedPromo ? (
-              <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-md px-4 py-3">
-                <Tag size={16} className="text-green-600 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-green-800 font-mono">{appliedPromo.code}</p>
-                  <p className="text-xs text-green-600">
-                    {appliedPromo.label && `${appliedPromo.label} · `}
-                    {appliedPromo.type === 'percent' ? `${appliedPromo.value}% ছাড়` : `৳${appliedPromo.value} ছাড়`}
-                    {' '}· সাশ্রয় ৳{appliedPromo.discount}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleRemovePromo}
-                  className="p-1.5 text-green-500 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                >
-                  <X size={15} />
-                </button>
-              </div>
-            ) : (
-              <PromoSection
-                promoInput={promoInput}
-                setPromoInput={setPromoInput}
-                setPromoError={setPromoError}
-                promoApplying={promoApplying}
-                promoError={promoError}
-                handleApplyPromo={handleApplyPromo}
-              />
-            )}
-          </div>
-
           <h2 className="font-display text-lg text-ink pt-2">{t('checkout.paymentMethod')}</h2>
           <div className="space-y-3">
             <label className="flex items-center gap-3 border border-stone-dark rounded-md p-4 cursor-pointer hover:border-clay">
@@ -359,6 +326,40 @@ export default function Checkout() {
                 <span className="font-mono">৳{total}</span>
               </div>
             </div>
+
+            {/* ── Promo Code Section ── */}
+            <div className="mt-4 pt-4 border-t border-stone-dark">
+              {appliedPromo ? (
+                <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-md px-4 py-3">
+                  <Tag size={16} className="text-green-600 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-green-800 font-mono">{appliedPromo.code}</p>
+                    <p className="text-xs text-green-600">
+                      {appliedPromo.label && `${appliedPromo.label} · `}
+                      {appliedPromo.type === 'percent' ? `${appliedPromo.value}%` : `৳${appliedPromo.value}`} {t('checkout.promoDiscount')}
+                      {' '}· সাশ্রয় ৳{appliedPromo.discount}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemovePromo}
+                    className="p-1.5 text-green-500 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+              ) : (
+                <PromoSection
+                  promoInput={promoInput}
+                  setPromoInput={setPromoInput}
+                  setPromoError={setPromoError}
+                  promoApplying={promoApplying}
+                  promoError={promoError}
+                  handleApplyPromo={handleApplyPromo}
+                  t={t}
+                />
+              )}
+            </div>
           </div>
         </div>
 
@@ -382,7 +383,7 @@ function Field({ label, name, value, onChange, error, placeholder, as = 'input' 
   )
 }
 
-function PromoSection({ promoInput, setPromoInput, setPromoError, promoApplying, promoError, handleApplyPromo }) {
+function PromoSection({ promoInput, setPromoInput, setPromoError, promoApplying, promoError, handleApplyPromo, t }) {
   const [open, setOpen] = React.useState(false)
   return (
     <div>
@@ -393,18 +394,18 @@ function PromoSection({ promoInput, setPromoInput, setPromoError, promoApplying,
           className="flex items-center gap-1.5 text-sm text-clay hover:underline"
         >
           <Tag size={13} />
-          প্রোমো কোড আছে?
+          {t('checkout.promoHaveCode')}
         </button>
       ) : (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-ink">প্রোমো কোড</p>
+          <p className="text-sm font-medium text-ink">{t('checkout.promoLabel')}</p>
           <div className="flex gap-2">
             <input
               type="text"
               value={promoInput}
               onChange={e => { setPromoInput(e.target.value.toUpperCase()); setPromoError('') }}
               onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleApplyPromo())}
-              placeholder="প্রোমো কোড লিখুন"
+              placeholder={t('checkout.promoPlaceholder')}
               autoFocus
               className="flex-1 bg-sand border border-stone-dark rounded-md px-3.5 py-2.5 text-sm font-mono uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-clay/40"
             />
@@ -415,7 +416,7 @@ function PromoSection({ promoInput, setPromoInput, setPromoError, promoApplying,
               className="flex items-center gap-1.5 px-4 py-2.5 bg-ink text-sand text-sm font-medium rounded-md hover:bg-clay transition-colors disabled:opacity-50 shrink-0"
             >
               {promoApplying ? <Loader2 size={14} className="animate-spin" /> : <Tag size={14} />}
-              Apply
+              {promoApplying ? t('checkout.promoApplying') : t('checkout.promoApply')}
             </button>
           </div>
           {promoError && (

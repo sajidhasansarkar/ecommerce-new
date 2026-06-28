@@ -13,10 +13,10 @@ export default function AdminLayout() {
 
   useEffect(() => {
     // loading শেষ হওয়ার পরেই check করব — আগে করলে flicker হয়
-    if (!loading && !localStorage.getItem('adminToken')) {
+    if (!loading && (!user || user.role !== 'admin')) {
       navigate('/login', { replace: true })
     }
-  }, [loading, navigate])
+  }, [loading, user, navigate])
 
   function handleLogout() {
     logout()
@@ -114,7 +114,7 @@ export default function AdminLayout() {
       </div>
     )
   }
-  if (!localStorage.getItem('adminToken')) return null
+  if (!user || user.role !== 'admin') return null
 
   return (
     <div className="min-h-screen bg-stone flex">

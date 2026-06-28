@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../context/LanguageContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api.js'
-import { Phone, Mail, ArrowLeft, ShieldCheck } from 'lucide-react'
+import { Phone, Mail, ArrowLeft, ShieldCheck, Eye, EyeOff } from 'lucide-react'
 import { signInWithGoogle, signInWithFacebook } from '../firebase.js'
 
 export default function Login() {
@@ -14,12 +14,13 @@ export default function Login() {
   const [tab, setTab] = useState('email') // 'email' | 'phone'
   const [mode, setMode] = useState('login') // 'login' | 'register'
   const [form, setForm] = useState({ name: '', email: '', password: '' })
+  const [showPassword, setShowPassword] = useState(false)
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [otpSent, setOtpSent] = useState(false)
   const [demoOtp, setDemoOtp] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState('') // 'email' | 'google' | 'facebook' | 'otp-send' | 'otp-verify' | ''
   const [countdown, setCountdown] = useState(0)
   const otpRefs = useRef([])
 
@@ -31,7 +32,7 @@ export default function Login() {
   }, [countdown])
 
   async function handleGoogleLogin() {
-    setLoading(true)
+    setLoading('google')
     setError('')
     try {
       const idToken = await signInWithGoogle()
@@ -42,12 +43,12 @@ export default function Login() {
       if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') return
       setError(err.message)
     } finally {
-      setLoading(false)
+      setLoading('')
     }
   }
 
   async function handleFacebookLogin() {
-    setLoading(true)
+    setLoading('facebook')
     setError('')
     try {
       const idToken = await signInWithFacebook()
@@ -56,14 +57,13 @@ export default function Login() {
       navigate(data.role === 'admin' ? '/admin' : '/')
     } catch (err) {
       if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') return
-      // Account-exists-with-different-credential — user already signed up via Google/email
       if (err.code === 'auth/account-exists-with-different-credential') {
         setError('এই ইমেইল দিয়ে আগে অন্য উপায়ে লগইন করা হয়েছে। Google বা ইমেইল দিয়ে চেষ্টা করুন।')
         return
       }
       setError(err.message)
     } finally {
-      setLoading(false)
+      setLoading('')
     }
   }
 
@@ -76,9 +76,8 @@ export default function Login() {
     setError('')
     if (!form.email.trim() || !form.password.trim()) { setError(t('login.errRequired')); return }
     if (mode === 'register' && !form.name.trim()) { setError(t('login.errName')); return }
-    setLoading(true)
+    setLoading('email')
     try {
-      const data = mode === 'login'
         ? await api.auth.login(form.email.trim(), form.password)
         : await api.auth.register(form.name.trim(), form.email.trim(), form.password)
       login(data)
@@ -86,14 +85,14 @@ export default function Login() {
     } catch (err) {
       setError(err.message)
     } finally {
-      setLoading(false)
+      setLoading('')
     }
   }
 
   async function handleSendOtp() {
     if (!phone.trim() || phone.trim().length < 10) { setError(t('login.errPhoneInvalid')); return }
     setError('')
-    setLoading(true)
+    setLoading('otp-send')
     try {
       const res = await api.auth.sendOtp(phone.trim())
       setOtpSent(true)
@@ -102,7 +101,7 @@ export default function Login() {
     } catch (err) {
       setError(err.message)
     } finally {
-      setLoading(false)
+      setLoading('')
     }
   }
 
@@ -124,7 +123,7 @@ export default function Login() {
     const code = otp.join('')
     if (code.length !== 6) { setError(t('login.errOtpLength')); return }
     setError('')
-    setLoading(true)
+    setLoading('otp-verify')
     try {
       const data = await api.auth.verifyOtp(phone.trim(), code)
       login(data)
@@ -132,7 +131,7 @@ export default function Login() {
     } catch (err) {
       setError(err.message)
     } finally {
-      setLoading(false)
+      setLoading('')
     }
   }
 
@@ -210,18 +209,28 @@ export default function Login() {
           </div>
           <div>
             <label className="block text-sm font-medium text-ink mb-1.5">{t('login.password')}</label>
-            <input
-              name="password" type="password" value={form.password} onChange={handleChange}
-              placeholder="••••••••"
-              className="w-full bg-sand border border-stone-dark rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40"
-            />
+            <div className="relative">
+              <input
+                name="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={handleChange}
+                placeholder="••••••••"
+                className="w-full bg-sand border border-stone-dark rounded-lg px-4 py-2.5 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-clay/40"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink/40 hover:text-clay transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
+            </div>
           </div>
           {error && <p className="text-sm text-clay">{error}</p>}
           <button
-            type="submit" disabled={loading}
+            type="submit" disabled={loading === 'email'}
             className="w-full bg-ink text-sand py-3 rounded-lg font-medium hover:bg-clay transition-colors disabled:opacity-60"
           >
-            {loading ? t('login.pleaseWait') : mode === 'login' ? t('login.loginButton') : t('login.registerButton')}
+            {loading === 'email' ? t('login.pleaseWait') : mode === 'login' ? t('login.loginButton') : t('login.registerButton')}
           </button>
         </form>
       )}
@@ -244,10 +253,10 @@ export default function Login() {
               </div>
               {error && <p className="text-sm text-clay">{error}</p>}
               <button
-                onClick={handleSendOtp} disabled={loading}
+                onClick={handleSendOtp} disabled={loading === 'otp-send'}
                 className="w-full bg-ink text-sand py-3 rounded-lg font-medium hover:bg-clay transition-colors disabled:opacity-60"
               >
-                {loading ? t('login.sending') : t('login.sendOtp')}
+                {loading === 'otp-send' ? t('login.sending') : t('login.sendOtp')}
               </button>
             </>
           ) : (
@@ -286,17 +295,17 @@ export default function Login() {
               {error && <p className="text-sm text-clay text-center">{error}</p>}
 
               <button
-                onClick={handleVerifyOtp} disabled={loading}
+                onClick={handleVerifyOtp} disabled={loading === 'otp-verify'}
                 className="w-full bg-ink text-sand py-3 rounded-lg font-medium hover:bg-clay transition-colors disabled:opacity-60"
               >
-                {loading ? t('login.verifying') : t('login.verify')}
+                {loading === 'otp-verify' ? t('login.verifying') : t('login.verify')}
               </button>
 
               <p className="text-center text-sm text-ink/50">
                 {countdown > 0 ? (
                   <span>{t('login.resendIn', countdown)}</span>
                 ) : (
-                  <button onClick={handleSendOtp} className="text-clay hover:underline">{t('login.resendOtp')}</button>
+                  <button onClick={handleSendOtp} disabled={loading === 'otp-send'} className="text-clay hover:underline disabled:opacity-50">{loading === 'otp-send' ? t('login.sending') : t('login.resendOtp')}</button>
                 )}
               </p>
             </>
@@ -314,7 +323,7 @@ export default function Login() {
       {/* Google Sign-In — powered by Firebase */}
       <button
         onClick={handleGoogleLogin}
-        disabled={loading}
+        disabled={loading === 'google'}
         className="w-full flex items-center justify-center gap-3 border border-stone-dark rounded-lg py-2.5 text-sm font-medium text-ink hover:border-clay hover:text-clay transition-colors disabled:opacity-60"
       >
         <svg width="18" height="18" viewBox="0 0 18 18">
@@ -323,19 +332,19 @@ export default function Login() {
           <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
           <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
         </svg>
-        {loading ? t('login.pleaseWait') : t('login.continueWithGoogle')}
+        {loading === 'google' ? t('login.pleaseWait') : t('login.continueWithGoogle')}
       </button>
 
       {/* Facebook Sign-In — powered by Firebase */}
       <button
         onClick={handleFacebookLogin}
-        disabled={loading}
+        disabled={loading === 'facebook'}
         className="mt-3 w-full flex items-center justify-center gap-3 bg-[#1877F2] text-white rounded-lg py-2.5 text-sm font-medium hover:bg-[#166FE5] transition-colors disabled:opacity-60"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
           <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
         </svg>
-        {loading ? t('login.pleaseWait') : 'Facebook দিয়ে লগইন করুন'}
+        {loading === 'facebook' ? t('login.pleaseWait') : 'Facebook দিয়ে লগইন করুন'}
       </button>
 
       <p className="text-center text-xs text-ink/40 mt-6">
