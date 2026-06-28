@@ -12,11 +12,13 @@ export default function Dashboard() {
   useEffect(() => {
     async function load() {
       try {
-        const [prods, ords] = await Promise.all([
-          api.products.list(),
+        // ড্যাশবোর্ড স্ট্যাট (total products, low stock, avg price) পুরো ক্যাটালগ
+        // থেকে হিসাব হয়, তাই বড় limit চাওয়া হলো
+        const [prodsRes, ords] = await Promise.all([
+          api.products.list({ limit: 500 }),
           api.orders.list(),
         ])
-        setProducts(prods)
+        setProducts(prodsRes.products ?? prodsRes)
         setOrders(ords)
       } catch (err) {
         setError(err.message)

@@ -201,7 +201,7 @@ function PromoBanner({ promo }) {
       <Link to={promo.link || '/shop'}
         className="relative block w-full aspect-[21/8] sm:aspect-[21/8] aspect-[4/3] rounded-2xl overflow-hidden group"
       >
-        <img src={promo.image} alt="promo" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+        <img src={promo.image} alt="promo" loading="lazy" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
         <div className="absolute inset-0 bg-gradient-to-r from-ink/60 via-ink/20 to-transparent" />
         <div className="promo-shimmer absolute inset-0" />
         {(promo.title || promo.subtitle) && (
@@ -237,7 +237,12 @@ export default function Home() {
   useReveal([loadingProducts, loadingSettings])
 
   useEffect(() => {
-    api.products.list().then(setProducts).catch(() => {}).finally(() => setLoadingProducts(false))
+    // হোমপেজে badge সেকশন (new/bestseller/sale/trending) দেখানোর জন্যই products লাগে,
+    // পুরো ক্যাটালগ না — তাই limit বেঁধে দেওয়া হলো
+    api.products.list({ limit: 60 })
+      .then((res) => setProducts(res.products ?? res))
+      .catch(() => {})
+      .finally(() => setLoadingProducts(false))
     api.settings.get().then(setSettings).catch(() => {}).finally(() => setLoadingSettings(false))
   }, [])
 
@@ -350,7 +355,7 @@ export default function Home() {
             <Link key={key} to={to}
               className={`group relative aspect-[4/3] sm:aspect-[16/10] rounded-lg overflow-hidden bg-stone reveal animate-scale-in delay-${(i % 4 + 1) * 100}`}
             >
-              <img src={src} alt={label}
+              <img src={src} alt={label} loading="lazy"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
               <span className="absolute inset-0 bg-gradient-to-t from-ink/60 via-ink/10 to-transparent" />

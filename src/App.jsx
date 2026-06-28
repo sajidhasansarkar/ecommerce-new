@@ -1,65 +1,80 @@
-import React from 'react'
+import React, { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar.jsx'
 import Footer from './components/Footer.jsx'
 import Toast from './components/Toast.jsx'
 import { useLanguage } from './context/LanguageContext.jsx'
 
-import Home from './pages/Home.jsx'
-import Shop from './pages/Shop.jsx'
-import ProductDetail from './pages/ProductDetail.jsx'
-import Cart from './pages/Cart.jsx'
-import Checkout from './pages/Checkout.jsx'
-import Login from './pages/Login.jsx'
-import Profile from './pages/Profile.jsx'
-import About from './pages/About.jsx'
+// কাস্টমার-ফেসিং পেজ — lazy load করা হয়েছে যাতে প্রথম ভিজিটেই পুরো অ্যাডমিন
+// প্যানেলের কোড ডাউনলোড করতে না হয়। প্রতিটা পেজ আলাদা JS চাঙ্কে বিল্ড হবে।
+const Home          = lazy(() => import('./pages/Home.jsx'))
+const Shop           = lazy(() => import('./pages/Shop.jsx'))
+const ProductDetail  = lazy(() => import('./pages/ProductDetail.jsx'))
+const Cart           = lazy(() => import('./pages/Cart.jsx'))
+const Checkout       = lazy(() => import('./pages/Checkout.jsx'))
+const Login          = lazy(() => import('./pages/Login.jsx'))
+const Profile        = lazy(() => import('./pages/Profile.jsx'))
+const About          = lazy(() => import('./pages/About.jsx'))
 
-import AdminLayout from './admin/AdminLayout.jsx'
-import Dashboard from './admin/Dashboard.jsx'
-import AdminProducts from './admin/AdminProducts.jsx'
-import AdminOrders from './admin/AdminOrders.jsx'
-import AdminCustomers from './admin/AdminCustomers.jsx'
-import AdminSiteSettings from './admin/AdminSiteSettings.jsx'
-import AdminCategories from './admin/AdminCategories.jsx'
-import AdminPromotions from './admin/AdminPromotions.jsx'
+// অ্যাডমিন পেজ — আলাদা চাঙ্কে, কাস্টমার এগুলো কখনো ডাউনলোড করবে না
+const AdminLayout       = lazy(() => import('./admin/AdminLayout.jsx'))
+const Dashboard         = lazy(() => import('./admin/Dashboard.jsx'))
+const AdminProducts     = lazy(() => import('./admin/AdminProducts.jsx'))
+const AdminOrders       = lazy(() => import('./admin/AdminOrders.jsx'))
+const AdminCustomers    = lazy(() => import('./admin/AdminCustomers.jsx'))
+const AdminSiteSettings = lazy(() => import('./admin/AdminSiteSettings.jsx'))
+const AdminCategories   = lazy(() => import('./admin/AdminCategories.jsx'))
+const AdminPromotions   = lazy(() => import('./admin/AdminPromotions.jsx'))
+
+function PageLoading() {
+  return (
+    <div className="min-h-[50vh] flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-ink/20 border-t-ink rounded-full animate-spin" />
+    </div>
+  )
+}
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<Dashboard />} />
-        <Route path="products" element={<AdminProducts />} />
-        <Route path="orders" element={<AdminOrders />} />
-        <Route path="customers" element={<AdminCustomers />} />
-        <Route path="settings" element={<AdminSiteSettings />} />
-        <Route path="categories" element={<AdminCategories />} />
-        <Route path="promotions" element={<AdminPromotions />} />
-      </Route>
+    <Suspense fallback={<PageLoading />}>
+      <Routes>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="customers" element={<AdminCustomers />} />
+          <Route path="settings" element={<AdminSiteSettings />} />
+          <Route path="categories" element={<AdminCategories />} />
+          <Route path="promotions" element={<AdminPromotions />} />
+        </Route>
 
-      <Route
-        path="*"
-        element={
-          <div className="min-h-screen flex flex-col">
-            <Navbar />
-            <main className="flex-1">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/shop" element={<Shop />} />
-                <Route path="/product/:id" element={<ProductDetail />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/about" element={<About />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </main>
-            <Footer />
-            <Toast />
-          </div>
-        }
-      />
-    </Routes>
+        <Route
+          path="*"
+          element={
+            <div className="min-h-screen flex flex-col">
+              <Navbar />
+              <main className="flex-1">
+                <Suspense fallback={<PageLoading />}>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/shop" element={<Shop />} />
+                    <Route path="/product/:id" element={<ProductDetail />} />
+                    <Route path="/cart" element={<Cart />} />
+                    <Route path="/checkout" element={<Checkout />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </main>
+              <Footer />
+              <Toast />
+            </div>
+          }
+        />
+      </Routes>
+    </Suspense>
   )
 }
 

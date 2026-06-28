@@ -55,7 +55,10 @@ export default function AdminProducts() {
     error: queryError,
   } = useQuery({
     queryKey: ['admin-products'],
-    queryFn: () => api.products.list(),
+    // অ্যাডমিন প্যানেলে পুরো ক্যাটালগ ম্যানেজ করতে হয়, তাই বড় limit চাওয়া হলো।
+    // .then() দিয়ে এখানেই {products,...} থেকে array বের করে নেওয়া হচ্ছে, যাতে
+    // নিচের বাকি কোড (setQueryData ইত্যাদি) আগের মতোই plain array আশা করতে পারে।
+    queryFn: () => api.products.list({ limit: 500 }).then((res) => res.products ?? res),
   })
 
   const [formError, setFormError] = useState('')

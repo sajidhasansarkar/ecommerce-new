@@ -32,9 +32,11 @@ export default function ProductDetail() {
         // sizeVariants থাকলে সেখান থেকে, না থাকলে পুরনো sizes থেকে
         const firstSize = p.sizeVariants?.[0]?.size || p.sizes?.[0] || null
         setSelectedSize(firstSize)
-        return api.products.list({ category: p.categoryKey })
+        // related products-এ মাত্র ৪টা দরকার, পুরো category না — তাই limit:5 চাওয়া হলো
+        return api.products.list({ category: p.categoryKey, limit: 5 })
       })
-      .then((list) => {
+      .then((res) => {
+        const list = res.products ?? res
         setRelated(list.filter((p) => p._id !== id).slice(0, 4))
       })
       .catch((e) => setError(e.message))
@@ -108,7 +110,7 @@ export default function ProductDetail() {
                     i === activeImage ? 'border-clay' : 'border-transparent'
                   }`}
                 >
-                  <img src={img} alt={`${name} ${i + 1}`} className="w-full h-full object-cover" />
+                  <img src={img} alt={`${name} ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>

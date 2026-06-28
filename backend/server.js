@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
+import compression from 'compression'
 import dotenv from 'dotenv'
 import { connectDB } from './config/db.js'
 import { globalLimiter } from './middleware/rateLimiter.js'
@@ -18,6 +19,9 @@ connectDB()
 const app = express()
 
 app.use(helmet())
+// gzip/brotli compression — JSON রেসপন্স সহ সবকিছু কম্প্রেস হয়ে যাবে,
+// বিশেষ করে প্রোডাক্ট লিস্টের মতো বড় JSON রেসপন্সে এটা বড় পার্থক্য আনে
+app.use(compression())
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,

@@ -242,7 +242,7 @@ export default function Checkout() {
             <div className="space-y-3 mb-5 max-h-64 overflow-y-auto thin-scroll">
               {items.map((item) => (
                 <div key={item.key} className="flex items-center gap-3 text-sm">
-                  <img src={item.image} alt={item.name} className="w-12 h-12 rounded object-cover bg-sand shrink-0" />
+                  <img src={item.image} alt={item.name} loading="lazy" className="w-12 h-12 rounded object-cover bg-sand shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-ink">{item.name}</p>
                     <p className="text-ink/50 text-xs">{t('cart.size')}: {item.size || '—'} · {item.qty}x</p>

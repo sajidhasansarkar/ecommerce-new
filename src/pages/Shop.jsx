@@ -31,13 +31,13 @@ export default function Shop() {
 
   useEffect(() => {
     setLoading(true)
-    const params = {}
+    const params = { limit: 100 } // Shop পেজে client-side sort/filter হয়, তাই বড় limit
     if (activeCategory !== 'all') params.category = activeCategory
     if (activeSubcategory) params.subcategory = activeSubcategory
     if (activeBadge) params.badge = activeBadge
     if (searchQuery) params.q = searchQuery
     api.products.list(params)
-      .then(setProducts)
+      .then((res) => setProducts(res.products ?? res)) // নতুন {products,...} ও পুরনো array — দুটোই সাপোর্ট
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
   }, [activeCategory, activeSubcategory, activeBadge, searchQuery])

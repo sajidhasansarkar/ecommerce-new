@@ -55,4 +55,12 @@ productSchema.pre('save', function(next) {
   next()
 })
 
+// ━━━ Indexes ━━━
+// shop পেজে category দিয়ে ফিল্টার করার সময় এই index ছাড়া পুরো collection scan হতো
+productSchema.index({ categoryKey: 1 })
+// createdAt দিয়ে sort করা হয় প্রতিটা লিস্ট রিকোয়েস্টে — compound index দিয়ে দ্রুত হবে
+productSchema.index({ categoryKey: 1, createdAt: -1 })
+// সার্চের জন্য টেক্সট ইনডেক্স — regex দিয়ে scan করার বদলে এটা ব্যবহার করা ভালো
+productSchema.index({ 'name.en': 'text', 'name.bn': 'text', 'description.en': 'text', 'description.bn': 'text' })
+
 export default mongoose.model('Product', productSchema)

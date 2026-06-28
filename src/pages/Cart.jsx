@@ -34,7 +34,7 @@ export default function Cart() {
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => (
             <div key={item.key} className="flex gap-4 border-b border-stone-dark pb-5">
-              <img src={item.image} alt={item.name} className="w-24 h-24 rounded-md object-cover bg-stone shrink-0" />
+              <img src={item.image} alt={item.name} loading="lazy" className="w-24 h-24 rounded-md object-cover bg-stone shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-3">
                   <div>

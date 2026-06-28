@@ -68,8 +68,22 @@ export async function getProducts(req, res) {
       else filter.$and = [qOr]
     }
 
-    const products = await Product.find(filter).sort({ createdAt: -1 })
-    res.json(products)
+    // পেজিনেশন: ?page=1&limit=24 — না দিলে ডিফল্ট প্রথম ২৪টা
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 24))
+    const skip = (page - 1) * limit
+
+    const [products, total] = await Promise.all([
+      Product.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Product.countDocuments(filter),
+    ])
+
+    res.json({
+      products,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+    })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
